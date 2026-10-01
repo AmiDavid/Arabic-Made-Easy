@@ -21,6 +21,7 @@ export default function VoicePage() {
   const chunksRef = useRef<Blob[]>([]);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const messagesRef = useRef<Msg[]>([]);
+  const conversationIdRef = useRef<string | null>(null);  // persistent conversation ID
   const vadStateRef = useRef<{
     isSpeaking: boolean;
     silenceStart: number;
@@ -170,6 +171,25 @@ export default function VoicePage() {
     vadStateRef.current.rafId = requestAnimationFrame(detectVoice);
   }
 
+  async function saveConversation(msgs: Msg[]) {
+    try {
+      const resp = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: conversationIdRef.current,
+          messages: msgs.map((m) => ({ role: m.role, ar: m.ar, en: m.en, ts: new Date().toISOString() })),
+        }),
+      });
+      if (resp.ok) {
+        const { id } = await resp.json();
+        if (id && !conversationIdRef.current) conversationIdRef.current = id;
+      }
+    } catch {
+      // silent — don't disturb the chat flow if save fails
+    }
+  }
+
   async function processUserAudio(blob: Blob) {
     try {
       setMode('thinking');
@@ -209,6 +229,9 @@ export default function VoicePage() {
       const withAi = [...nextMsgs, aiMsg];
       messagesRef.current = withAi;
       setMessages(withAi);
+
+      // Save to Supabase (fire-and-forget)
+      saveConversation(withAi);
 
       await speak(chatJson.arabic);
     } catch (err: any) {
@@ -278,9 +301,14 @@ export default function VoicePage() {
           ? "Continuous mode. Just speak — I'll reply when you pause. Stays live until you tap stop."
           : "Tap the mic to start. Continuous mode — no need to hold or tap again between messages."}
       </p>
-      <a href="/voice-training" className="text-xs text-gold-500 hover:text-gold-400 inline-block mb-4">
-        🎤 Train a Bethlehem/Palestinian voice →
-      </a>
+      <div className="flex items-center gap-3 mb-4">
+        <a href="/voice-training" className="text-xs text-gold-500 hover:text-gold-400">
+          🎤 Train a Bethlehem/Palestinian voice →
+        </a>
+        <a href="/history" className="text-xs text-gold-500 hover:text-gold-400">
+          📜 Past conversations →
+        </a>
+      </div>
 
       {error && (
         <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-200 text-sm flex items-start gap-2">
