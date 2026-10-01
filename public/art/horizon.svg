@@ -1,0 +1,282 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 320" preserveAspectRatio="xMidYMax slice">
+  <defs>
+    <linearGradient id="hills2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2847"/>
+      <stop offset="100%" stop-color="#0a1428"/>
+    </linearGradient>
+    <linearGradient id="buildings" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a3a5a"/>
+      <stop offset="100%" stop-color="#0f1a2e"/>
+    </linearGradient>
+    <radialGradient id="windowg">
+      <stop offset="0%" stop-color="#ffd98a" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#ffd98a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="domeglow">
+      <stop offset="0%" stop-color="#f0d060" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#f0d060" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Rolling hills in the far distance -->
+  <path d="M 0,180 Q 200,160 400,170 Q 600,155 800,170 Q 1000,160 1200,170 Q 1400,155 1600,170 L 1600,320 L 0,320 Z" fill="#2a3a5a" opacity="0.6"/>
+
+  <!-- Mid-distance city base: ~250px horizon line -->
+  <path d="M 0,250 L 1600,250 L 1600,320 L 0,320 Z" fill="#0f1a2e"/>
+
+  <!-- ============ JERUSALEM OLD CITY (left-center) ============ -->
+  <g transform="translate(380,0)">
+    <!-- Old City Walls -->
+    <rect x="-180" y="220" width="520" height="100" fill="#1a2238"/>
+    <!-- Crenellated top -->
+    <g fill="#2a3a5a">
+      <rect x="-180" y="215" width="12" height="8"/>
+      <rect x="-156" y="215" width="12" height="8"/>
+      <rect x="-132" y="215" width="12" height="8"/>
+      <rect x="-108" y="215" width="12" height="8"/>
+      <rect x="-84" y="215" width="12" height="8"/>
+      <rect x="-60" y="215" width="12" height="8"/>
+      <rect x="-36" y="215" width="12" height="8"/>
+      <rect x="-12" y="215" width="12" height="8"/>
+      <rect x="12" y="215" width="12" height="8"/>
+      <rect x="36" y="215" width="12" height="8"/>
+      <rect x="60" y="215" width="12" height="8"/>
+      <rect x="84" y="215" width="12" height="8"/>
+      <rect x="108" y="215" width="12" height="8"/>
+      <rect x="132" y="215" width="12" height="8"/>
+      <rect x="156" y="215" width="12" height="8"/>
+      <rect x="180" y="215" width="12" height="8"/>
+      <rect x="204" y="215" width="12" height="8"/>
+      <rect x="228" y="215" width="12" height="8"/>
+      <rect x="252" y="215" width="12" height="8"/>
+      <rect x="276" y="215" width="12" height="8"/>
+      <rect x="300" y="215" width="12" height="8"/>
+      <rect x="324" y="215" width="12" height="8"/>
+    </g>
+
+    <!-- Jaffa Gate tower -->
+    <g>
+      <rect x="-170" y="140" width="60" height="110" fill="#1f2d4a"/>
+      <!-- crenellation on tower -->
+      <g fill="#2a3a5a">
+        <rect x="-170" y="133" width="10" height="8"/>
+        <rect x="-152" y="133" width="10" height="8"/>
+        <rect x="-134" y="133" width="10" height="8"/>
+        <rect x="-116" y="133" width="10" height="8"/>
+      </g>
+      <!-- warm windows -->
+      <rect x="-150" y="190" width="4" height="8" fill="#ffd98a" opacity="0.9"/>
+      <rect x="-138" y="190" width="4" height="8" fill="#ffd98a" opacity="0.9"/>
+      <rect x="-150" y="170" width="4" height="7" fill="#ffd98a" opacity="0.8"/>
+    </g>
+
+    <!-- ********** DOME OF THE ROCK (big, central, iconic) ********** -->
+    <g transform="translate(100,100)">
+      <!-- warm glow around it -->
+      <ellipse cx="0" cy="-20" rx="120" ry="100" fill="url(#domeglow)"/>
+
+      <!-- Octagon base (front faces) -->
+      <path d="M -70,130 L -70,45 L -50,25 L 50,25 L 70,45 L 70,130 Z" fill="#d4b88f"/>
+      <!-- side depth -->
+      <path d="M 70,45 L 70,130 L 85,127 L 85,47 Z" fill="#b89d75"/>
+
+      <!-- Famous blue tiled band (Persian mosaic) -->
+      <rect x="-70" y="45" width="140" height="18" fill="#2d5a8a"/>
+      <rect x="-70" y="63" width="140" height="4" fill="#1a4068"/>
+      <!-- faux arabesque pattern lines -->
+      <g stroke="#4a7fb8" stroke-width="0.5" opacity="0.6">
+        <path d="M -60,50 Q -50,46 -40,50 Q -30,46 -20,50 Q -10,46 0,50 Q 10,46 20,50 Q 30,46 40,50 Q 50,46 60,50"/>
+      </g>
+
+      <!-- Drum (where dome sits) -->
+      <rect x="-45" y="-5" width="90" height="30" fill="#c4a876"/>
+      <!-- Arched windows on drum -->
+      <g fill="#1a2847">
+        <path d="M -40,20 L -40,5 Q -35,-2 -30,5 L -30,20 Z"/>
+        <path d="M -20,20 L -20,5 Q -15,-2 -10,5 L -10,20 Z"/>
+        <path d="M 0,20 L 0,5 Q 5,-2 10,5 L 10,20 Z"/>
+        <path d="M 20,20 L 20,5 Q 25,-2 30,5 L 30,20 Z"/>
+      </g>
+
+      <!-- THE GOLDEN DOME itself (bigger, more pronounced) -->
+      <path d="M -48,-5 Q -48,-72 0,-82 Q 48,-72 48,-5 Z" fill="#d4a64a"/>
+      <!-- highlight -->
+      <path d="M -30,-30 Q -38,-60 -12,-78" stroke="#f0d060" stroke-width="3" fill="none" opacity="0.7"/>
+      <path d="M -20,-45 Q -24,-60 -10,-70" stroke="#f8e090" stroke-width="1.5" fill="none" opacity="0.8"/>
+
+      <!-- Finial / spire with crescent -->
+      <rect x="-1.5" y="-96" width="3" height="18" fill="#d4a64a"/>
+      <circle cx="0" cy="-100" r="5" fill="#f0d060"/>
+      <!-- Crescent on top -->
+      <path d="M -8,-100 Q -4,-115 4,-110 Q -4,-108 -8,-100" fill="#f0d060"/>
+
+      <!-- Octagon face windows (arched) -->
+      <g fill="#1a2847">
+        <path d="M -55,105 L -55,80 Q -47,73 -39,80 L -39,105 Z"/>
+        <path d="M -20,105 L -20,80 Q -12,73 -4,80 L -4,105 Z"/>
+        <path d="M 15,105 L 15,80 Q 23,73 31,80 L 31,105 Z"/>
+        <path d="M 50,105 L 50,80 Q 58,73 66,80 L 66,105 Z"/>
+      </g>
+    </g>
+
+    <!-- Al-Aqsa Mosque silver dome (left of DotR) -->
+    <g transform="translate(-60,170)">
+      <rect x="-35" y="30" width="70" height="50" fill="#8b7355"/>
+      <!-- silver/grey dome -->
+      <path d="M -25,30 Q -25,0 0,-7 Q 25,0 25,30 Z" fill="#a8a5a0"/>
+      <path d="M -15,10 Q -20,-5 -2,-6" stroke="#c5c2b8" stroke-width="2" fill="none" opacity="0.6"/>
+      <rect x="-1" y="-15" width="2" height="10" fill="#8b7355"/>
+      <circle cx="0" cy="-17" r="2" fill="#c5c2b8"/>
+    </g>
+
+    <!-- Minaret 1 (right of DotR complex) -->
+    <g transform="translate(240,110)">
+      <rect x="-6" y="30" width="12" height="140" fill="#8b7355"/>
+      <!-- balcony -->
+      <rect x="-10" y="20" width="20" height="6" fill="#a8926f"/>
+      <!-- top chamber -->
+      <rect x="-6" y="0" width="12" height="20" fill="#8b7355"/>
+      <!-- small dome -->
+      <path d="M -8,0 Q -8,-10 0,-12 Q 8,-10 8,0 Z" fill="#a8926f"/>
+      <!-- spire -->
+      <path d="M -1,-12 L 0,-24 L 1,-12 Z" fill="#a8926f"/>
+      <circle cx="0" cy="-26" r="1.5" fill="#f0d060"/>
+      <!-- windows -->
+      <rect x="-2" y="40" width="4" height="6" fill="#ffd98a" opacity="0.85"/>
+      <rect x="-2" y="80" width="4" height="6" fill="#ffd98a" opacity="0.75"/>
+      <rect x="-2" y="120" width="4" height="6" fill="#ffd98a" opacity="0.85"/>
+    </g>
+
+    <!-- small cluster of Old City houses between -->
+    <g>
+      <rect x="-100" y="195" width="30" height="55" fill="#1f2d4a"/>
+      <rect x="-70" y="200" width="25" height="50" fill="#2a3a5a"/>
+      <rect x="180" y="190" width="35" height="60" fill="#1f2d4a"/>
+      <rect x="215" y="200" width="20" height="50" fill="#2a3a5a"/>
+      <!-- warm windows -->
+      <rect x="-92" y="215" width="4" height="6" fill="#ffd98a" opacity="0.9"/>
+      <rect x="-82" y="215" width="4" height="6" fill="#ffd98a" opacity="0.7"/>
+      <rect x="-62" y="220" width="4" height="6" fill="#ffd98a" opacity="0.9"/>
+      <rect x="188" y="215" width="4" height="6" fill="#ffd98a" opacity="0.9"/>
+      <rect x="200" y="215" width="4" height="6" fill="#ffd98a" opacity="0.8"/>
+      <rect x="222" y="220" width="4" height="6" fill="#ffd98a" opacity="0.9"/>
+    </g>
+  </g>
+
+  <!-- ============ BETHLEHEM — Church of the Nativity (right-center) ============ -->
+  <g transform="translate(1140,0)">
+    <!-- hilltop base -->
+    <path d="M -140,250 Q -70,232 0,235 Q 70,230 140,245 L 140,320 L -140,320 Z" fill="#0f1a2e"/>
+
+    <!-- Church of the Nativity complex -->
+    <g transform="translate(0,100)">
+      <!-- Main basilica -->
+      <rect x="-90" y="80" width="180" height="80" fill="#1f2d4a"/>
+      <!-- Fortress-like crenellation -->
+      <g fill="#2a3a5a">
+        <rect x="-90" y="72" width="12" height="10"/>
+        <rect x="-66" y="72" width="12" height="10"/>
+        <rect x="-42" y="72" width="12" height="10"/>
+        <rect x="-18" y="72" width="12" height="10"/>
+        <rect x="6" y="72" width="12" height="10"/>
+        <rect x="30" y="72" width="12" height="10"/>
+        <rect x="54" y="72" width="12" height="10"/>
+        <rect x="78" y="72" width="12" height="10"/>
+      </g>
+
+      <!-- Round-topped Byzantine windows -->
+      <g fill="#ffd98a" opacity="0.85">
+        <path d="M -70,110 L -70,130 L -58,130 L -58,110 Q -64,103 -70,110 Z"/>
+        <path d="M -35,110 L -35,130 L -23,130 L -23,110 Q -29,103 -35,110 Z"/>
+        <path d="M 0,110 L 0,130 L 12,130 L 12,110 Q 6,103 0,110 Z"/>
+        <path d="M 35,110 L 35,130 L 47,130 L 47,110 Q 41,103 35,110 Z"/>
+        <path d="M 70,110 L 70,130 L 82,130 L 82,110 Q 76,103 70,110 Z"/>
+      </g>
+
+      <!-- Central nativity dome -->
+      <rect x="-20" y="50" width="40" height="30" fill="#2a3a5a"/>
+      <path d="M -22,50 Q -22,15 0,10 Q 22,15 22,50 Z" fill="#3a4a6a"/>
+      <!-- Spire and cross -->
+      <rect x="-1" y="-5" width="2" height="15" fill="#8b7355"/>
+      <path d="M -0.5,-15 L 0.5,-15 L 0.5,-25 L -0.5,-25 Z" fill="#f0e6c8"/>
+      <rect x="-3" y="-22" width="7" height="1" fill="#f0e6c8"/>
+
+      <!-- Bell tower (left) -->
+      <rect x="-130" y="30" width="30" height="130" fill="#1f2d4a"/>
+      <g fill="#2a3a5a">
+        <rect x="-130" y="22" width="10" height="10"/>
+        <rect x="-115" y="22" width="10" height="10"/>
+        <rect x="-100" y="22" width="10" height="10"/>
+      </g>
+      <!-- Big arched bell opening -->
+      <path d="M -124,65 L -124,85 L -106,85 L -106,65 Q -115,56 -124,65 Z" fill="#ffd98a" opacity="0.95"/>
+      <!-- Smaller windows below -->
+      <rect x="-124" y="100" width="5" height="10" fill="#ffd98a" opacity="0.85"/>
+      <rect x="-115" y="100" width="5" height="10" fill="#ffd98a" opacity="0.85"/>
+      <rect x="-124" y="125" width="5" height="10" fill="#ffd98a" opacity="0.85"/>
+      <rect x="-115" y="125" width="5" height="10" fill="#ffd98a" opacity="0.85"/>
+      <!-- Cross on top -->
+      <rect x="-116" y="-5" width="2" height="20" fill="#f0e6c8"/>
+      <rect x="-120" y="2" width="10" height="2" fill="#f0e6c8"/>
+    </g>
+
+    <!-- Flanking houses -->
+    <rect x="100" y="200" width="40" height="50" fill="#1a2238"/>
+    <rect x="140" y="215" width="30" height="35" fill="#1f2d4a"/>
+    <rect x="-170" y="210" width="35" height="40" fill="#1a2238"/>
+  </g>
+
+  <!-- ============ Satellite cityscape silhouettes further right ============ -->
+  <g fill="#1a2238">
+    <rect x="1350" y="215" width="30" height="35"/>
+    <rect x="1380" y="195" width="28" height="55"/>
+    <rect x="1408" y="225" width="25" height="25"/>
+    <!-- small dome -->
+    <path d="M 1445,215 Q 1445,205 1453,203 Q 1461,205 1461,215 Z" fill="#2a3a5a"/>
+    <rect x="1442" y="215" width="22" height="35"/>
+    <rect x="1465" y="220" width="30" height="30"/>
+    <rect x="1500" y="210" width="26" height="40"/>
+    <rect x="1527" y="225" width="24" height="25"/>
+    <rect x="1555" y="200" width="35" height="50"/>
+  </g>
+  <!-- small warm windows on satellite buildings -->
+  <g fill="#ffd98a">
+    <rect x="1385" y="210" width="3" height="4" opacity="0.9"/>
+    <rect x="1395" y="210" width="3" height="4" opacity="0.75"/>
+    <rect x="1385" y="225" width="3" height="4" opacity="0.85"/>
+    <rect x="1470" y="230" width="3" height="4" opacity="0.9"/>
+    <rect x="1505" y="220" width="3" height="4" opacity="0.9"/>
+    <rect x="1515" y="220" width="3" height="4" opacity="0.75"/>
+    <rect x="1560" y="215" width="3" height="4" opacity="0.9"/>
+    <rect x="1570" y="215" width="3" height="4" opacity="0.9"/>
+    <rect x="1580" y="230" width="3" height="4" opacity="0.8"/>
+  </g>
+
+  <!-- cityscape silhouettes left side -->
+  <g fill="#1a2238">
+    <rect x="60" y="220" width="25" height="30"/>
+    <rect x="90" y="200" width="30" height="50"/>
+    <rect x="125" y="215" width="22" height="35"/>
+    <rect x="150" y="195" width="28" height="55"/>
+    <rect x="180" y="225" width="20" height="25"/>
+  </g>
+  <g fill="#ffd98a">
+    <rect x="95" y="215" width="3" height="4" opacity="0.9"/>
+    <rect x="105" y="215" width="3" height="4" opacity="0.75"/>
+    <rect x="155" y="210" width="3" height="4" opacity="0.9"/>
+    <rect x="165" y="210" width="3" height="4" opacity="0.8"/>
+    <rect x="155" y="225" width="3" height="4" opacity="0.85"/>
+  </g>
+
+  <!-- Olive trees scattered -->
+  <g fill="#1a2e0f" opacity="0.9">
+    <!-- cypress -->
+    <path d="M 820,240 Q 815,210 820,195 Q 825,210 820,240 Z"/>
+    <path d="M 1300,240 Q 1295,215 1300,205 Q 1305,215 1300,240 Z"/>
+    <!-- olive trees -->
+    <ellipse cx="700" cy="238" rx="14" ry="11"/>
+    <ellipse cx="860" cy="245" rx="12" ry="9"/>
+    <ellipse cx="990" cy="243" rx="13" ry="10"/>
+    <ellipse cx="1350" cy="245" rx="11" ry="9"/>
+  </g>
+</svg>

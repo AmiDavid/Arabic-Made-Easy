@@ -25,18 +25,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           aria-hidden
           className="pointer-events-none fixed inset-0 -z-20 bg-gradient-to-b from-night-900 via-night-800 to-night-900"
         />
-        {/* The Jerusalem/Bethlehem scene — bottom-anchored, visible */}
+        {/* The Jerusalem/Bethlehem horizon — bottom-anchored, clearly visible */}
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[60vh]"
+          className="pointer-events-none fixed inset-x-0 bottom-0 -z-10"
           style={{
-            backgroundImage: "url('/art/jerusalem-bethlehem.svg')",
-            backgroundSize: 'cover',
+            backgroundImage: "url('/art/horizon.svg')",
+            backgroundSize: '100% auto',
             backgroundPosition: 'center bottom',
             backgroundRepeat: 'no-repeat',
-            opacity: 0.42,
-            maskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
+            height: '280px',
+            opacity: 0.75,
+            maskImage: 'linear-gradient(to top, black 60%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 60%, transparent 100%)',
           }}
         />
         {/* Subtle star field (CSS-only radial dots) upper area */}
