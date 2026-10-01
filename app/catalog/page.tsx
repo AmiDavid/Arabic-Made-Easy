@@ -12,14 +12,34 @@ export default function CatalogPage() {
   const [topicId, setTopicId] = useState<string | 'all'>('all');
   const [loading, setLoading] = useState(true);
 
+  const [totalCount, setTotalCount] = useState(0);
+
   useEffect(() => {
     (async () => {
-      const [{ data: t }, { data: e }] = await Promise.all([
-        supabase.from('topics').select('*').order('sort_order'),
-        supabase.from('entries').select('*').order('created_at', { ascending: false }).limit(3000),
-      ]);
+      // Topics
+      const { data: t } = await supabase.from('topics').select('*').order('sort_order');
       setTopics((t as Topic[]) || []);
-      setEntries((e as Entry[]) || []);
+
+      // Supabase caps each REST request at 1000 rows. Batch using .range().
+      const BATCH = 1000;
+      let all: Entry[] = [];
+      let from = 0;
+      let totalInHeader = 0;
+      while (true) {
+        const { data, count } = await supabase
+          .from('entries')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, from + BATCH - 1);
+        if (count !== null && count !== undefined) totalInHeader = count;
+        if (!data || data.length === 0) break;
+        all = all.concat(data as Entry[]);
+        if (data.length < BATCH) break;
+        from += BATCH;
+        if (from > 10000) break; // safety stop
+      }
+      setEntries(all);
+      setTotalCount(totalInHeader || all.length);
       setLoading(false);
     })();
   }, []);
@@ -41,7 +61,7 @@ export default function CatalogPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 pt-6">
       <h1 className="text-2xl font-bold mb-1">Vocabulary</h1>
-      <p className="text-sm text-gray-400 mb-4">{entries.length.toLocaleString()} entries</p>
+      <p className="text-sm text-gray-400 mb-4">{totalCount.toLocaleString()} entries</p>
 
       <div className="flex gap-2 mb-3">
         <div className="relative flex-1">
