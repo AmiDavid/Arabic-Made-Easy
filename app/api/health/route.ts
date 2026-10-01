@@ -29,7 +29,33 @@ async function timed<T>(fn: () => Promise<T>) {
 
 export async function GET(req: NextRequest) {
   const deep = req.nextUrl.searchParams.get('deep') === '1';
+  const only = req.nextUrl.searchParams.get('only');
   const out: Record<string, any> = {};
+
+  // ?only=ai — just the AI generation checks (small response, easy to read)
+  if (only === 'ai') {
+    out.sentences = await timed(async () => {
+      const { sentences, model } = await generateSentences({ level: 'easy', count: 2 });
+      return { model, first: sentences[0]?.english, arabic: sentences[0]?.arabic, n: sentences.length };
+    });
+    out.chat_model = await timed(async () => {
+      const { data, model } = await generateJSON<{ arabic: string; english: string }>({
+        system: 'You are a Palestinian Arabic teacher. Reply in one short Palestinian sentence.',
+        messages: [{ role: 'user', content: 'مرحبا، كيف حالك؟' }],
+        schema: {
+          type: 'object',
+          properties: { arabic: { type: 'string' }, english: { type: 'string' } },
+          required: ['arabic', 'english'],
+        },
+        tier: 'fast',
+        maxTokens: 200,
+      });
+      if (!data?.arabic) throw new Error('no reply');
+      return { model, ...data };
+    });
+    out.skipped_models = skippedModels;
+    return NextResponse.json(out, { headers: { 'Cache-Control': 'no-store' } });
+  }
 
   out.env = {
     supabase_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
