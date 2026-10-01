@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Topic } from '@/types';
-import { Camera, Loader2, Save, Trash2 } from 'lucide-react';
+import { Camera, Loader2, Save, Trash2, Image as ImageIcon } from 'lucide-react';
 
 type Extracted = {
   arabic: string;
@@ -100,19 +100,31 @@ export default function ScanPage() {
       <p className="text-sm text-gray-400 mb-4">Take or upload a photo — AI extracts the vocab, you confirm.</p>
 
       {!imgUrl && (
-        <label className="block border-2 border-dashed hairline rounded-2xl p-10 text-center cursor-pointer hover:bg-white/[0.02]">
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-          />
-          <Camera className="w-10 h-10 text-brand-500 mx-auto mb-2" />
-          <div className="font-semibold">Take or choose photo</div>
-          <div className="text-xs text-gray-500 mt-1">on phone: uses your camera</div>
-        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block border-2 border-dashed hairline rounded-2xl p-6 text-center cursor-pointer hover:bg-white/[0.02]">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            />
+            <Camera className="w-8 h-8 text-brand-500 mx-auto mb-2" />
+            <div className="font-semibold">Take photo</div>
+            <div className="text-xs text-gray-500 mt-1">opens camera</div>
+          </label>
+          <label className="block border-2 border-dashed hairline rounded-2xl p-6 text-center cursor-pointer hover:bg-white/[0.02]">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            />
+            <ImageIcon className="w-8 h-8 text-brand-500 mx-auto mb-2" />
+            <div className="font-semibold">Choose from gallery</div>
+            <div className="text-xs text-gray-500 mt-1">pick existing image</div>
+          </label>
+        </div>
       )}
 
       {imgUrl && (
