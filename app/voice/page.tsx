@@ -177,12 +177,14 @@ export default function VoicePage() {
       form.append('audio', blob, `user.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`);
       const sttResp = await fetch('/api/stt', { method: 'POST', body: form });
       if (!sttResp.ok) {
-        const err = await sttResp.text();
-        throw new Error(`STT failed: ${err}`);
+        const errJson = await sttResp.json().catch(() => ({}));
+        throw new Error(`STT: ${errJson.error || sttResp.statusText}`);
       }
-      const { text } = await sttResp.json();
+      const { text, note } = await sttResp.json();
       if (!text?.trim()) {
+        // No speech detected or audio too short — just resume listening quietly
         if (conversationActiveRef.current) startListening();
+        else setMode('idle');
         return;
       }
 
@@ -197,8 +199,8 @@ export default function VoicePage() {
         body: JSON.stringify({ messages: nextMsgs.map((m) => ({ role: m.role, content: m.ar })) }),
       });
       if (!chatResp.ok) {
-        const err = await chatResp.text();
-        throw new Error(`Chat failed: ${err}`);
+        const errJson = await chatResp.json().catch(() => ({}));
+        throw new Error(`Chat: ${errJson.error || chatResp.statusText}`);
       }
       const chatJson = await chatResp.json();
       if (chatJson.error) throw new Error(`Chat: ${chatJson.error}`);
@@ -210,8 +212,13 @@ export default function VoicePage() {
 
       await speak(chatJson.arabic);
     } catch (err: any) {
+      // Error during turn — show it, but DON'T kill the continuous conversation
       setError(err.message || String(err));
-      setMode('idle');
+      if (conversationActiveRef.current) {
+        setTimeout(() => startListening(), 1500);  // give user a sec to read error, then resume
+      } else {
+        setMode('idle');
+      }
     }
   }
 
@@ -224,8 +231,8 @@ export default function VoicePage() {
         body: JSON.stringify({ text }),
       });
       if (!resp.ok) {
-        const err = await resp.text();
-        throw new Error(`TTS failed: ${err}`);
+        const errJson = await resp.json().catch(() => ({}));
+        throw new Error(`TTS: ${errJson.error || resp.statusText}`);
       }
       const buf = await resp.arrayBuffer();
       const url = URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }));
@@ -235,25 +242,41 @@ export default function VoicePage() {
       }
     } catch (err: any) {
       setError(err.message || String(err));
-      setMode('idle');
+      // On TTS error, still resume listening — user can read the Arabic/English text on screen
+      if (conversationActiveRef.current) {
+        setTimeout(() => startListening(), 500);
+      } else {
+        setMode('idle');
+      }
     }
   }
 
   const statusLabel = {
     idle: conversationActive ? 'Starting…' : 'Tap to start conversation',
-    listening: '🎤 Listening — speak now',
+    listening: '🎤 Listening — just talk',
     thinking: '💭 Thinking…',
-    playing: '🔊 Speaking…',
+    playing: '🔊 Teacher speaking…',
     speaking: '',
   }[mode];
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-6 pb-40">
-      <h1 className="text-2xl font-bold mb-1">Voice chat</h1>
-      <p className="text-sm text-gray-400 mb-4">
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold">Voice chat</h1>
+        {conversationActive && (
+          <div className="flex items-center gap-1.5 bg-rose-500/15 border border-rose-500/40 rounded-full px-3 py-1 text-xs text-rose-200">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+            </span>
+            LIVE
+          </div>
+        )}
+      </div>
+      <p className="text-sm text-stone-200/70 mb-4">
         {conversationActive
-          ? "I'm listening — just talk, I'll reply when you pause."
-          : "Tap the mic to start a continuous conversation in Palestinian Arabic."}
+          ? "Continuous mode. Just speak — I'll reply when you pause. Stays live until you tap stop."
+          : "Tap the mic to start. Continuous mode — no need to hold or tap again between messages."}
       </p>
       <a href="/voice-training" className="text-xs text-gold-500 hover:text-gold-400 inline-block mb-4">
         🎤 Train a Bethlehem/Palestinian voice →
