@@ -25,6 +25,8 @@ const OPENAI_MODELS: Record<Tier, string> = {
 
 // Remember which model id worked, so we don't retry dead ones on every call
 const workingModel: Partial<Record<Tier, string>> = {};
+// Why a model id was skipped (exposed by /api/health for diagnosis)
+export const skippedModels: Record<string, string> = {};
 
 function normalise(turns: ChatTurn[]): ChatTurn[] {
   const cleaned = turns
@@ -59,6 +61,7 @@ async function withAnthropicModel<T>(tier: Tier, fn: (model: string) => Promise<
     } catch (err: any) {
       lastErr = err;
       if (!isModelProblem(err)) throw err;
+      skippedModels[model] = String(err?.message || err).slice(0, 200);
     }
   }
   throw lastErr;

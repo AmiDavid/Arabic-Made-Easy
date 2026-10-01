@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ANTHROPIC_MODELS, generateJSON } from '@/lib/ai';
+import { ANTHROPIC_MODELS, generateJSON, skippedModels } from '@/lib/ai';
 import { transcribe } from '@/lib/stt';
+import { generateSentences } from '@/lib/sentences';
 
 /**
  * GET /api/health          — quick checks (keys present, DB, model availability)
@@ -162,7 +163,31 @@ export async function GET(req: NextRequest) {
       if (!data?.arabic) throw new Error(`no data; raw=${raw.slice(0, 160)}`);
       return { model, ...data };
     });
+
+    // The real sentence generator, end to end (2 easy sentences)
+    out.sentences = await timed(async () => {
+      const { sentences, model } = await generateSentences({ level: 'easy', count: 2 });
+      return { model, first: sentences[0]?.english, arabic: sentences[0]?.arabic, n: sentences.length };
+    });
+
+    // The teacher's fast model with the chat-style schema
+    out.chat_model = await timed(async () => {
+      const { data, model } = await generateJSON<{ arabic: string; english: string }>({
+        system: 'You are a Palestinian Arabic teacher. Reply in one short Palestinian sentence.',
+        messages: [{ role: 'user', content: 'مرحبا، كيف حالك؟' }],
+        schema: {
+          type: 'object',
+          properties: { arabic: { type: 'string' }, english: { type: 'string' } },
+          required: ['arabic', 'english'],
+        },
+        tier: 'fast',
+        maxTokens: 200,
+      });
+      if (!data?.arabic) throw new Error('no reply');
+      return { model, ...data };
+    });
   }
 
+  out.skipped_models = skippedModels;
   return NextResponse.json(out, { headers: { 'Cache-Control': 'no-store' } });
 }

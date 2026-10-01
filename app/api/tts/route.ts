@@ -1,55 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 export const maxDuration = 60;
-import OpenAI from 'openai';
-import { providers } from '@/lib/providers';
 
 /**
- * TTS. Uses ElevenLabs if configured (much better Arabic), else OpenAI TTS.
- * To swap to a cloned Bethlehem voice, set ELEVENLABS_VOICE_ID.
+ * POST /api/tts  { text } → audio/mpeg
+ * Tries ElevenLabs (best Arabic), then OpenAI TTS. If both fail, returns 503
+ * with the reasons so the client can fall back to the phone's built-in voice.
+ * To use a cloned Bethlehem voice, set ELEVENLABS_VOICE_ID.
  */
 
-export async function POST(req: NextRequest) {
-  try {
-    const { text } = await req.json();
-    if (!text) return NextResponse.json({ error: 'text required' }, { status: 400 });
-
-    let audioBuffer: ArrayBuffer;
-
-    if (providers.tts === 'elevenlabs') {
-      const voiceId = process.env.ELEVENLABS_VOICE_ID || 'pMsXgVXv3BLzUgSXRplE';
-      // Use streaming endpoint + turbo model + low-latency opt for fastest reply
-      const resp = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=3`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'xi-api-key': process.env.ELEVENLABS_API_KEY!,
-            Accept: 'audio/mpeg',
-          },
-          body: JSON.stringify({
-            text,
-            model_id: 'eleven_turbo_v2_5',  // 2-3x faster than multilingual_v2, good Arabic
-            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-          }),
-        }
-      );
-      if (!resp.ok) return NextResponse.json({ error: `ElevenLabs: ${await resp.text()}` }, { status: 500 });
-      audioBuffer = await resp.arrayBuffer();
-    } else {
-      // OpenAI TTS — works with Arabic but sounds fairly generic.
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const resp = await openai.audio.speech.create({
-        model: 'tts-1',
-        voice: 'nova',   // nova/shimmer handle Arabic best
-        input: text,
-      });
-      audioBuffer = await resp.arrayBuffer();
+async function elevenlabs(text: string): Promise<ArrayBuffer> {
+  const key = process.env.ELEVENLABS_API_KEY;
+  if (!key) throw new Error('no ElevenLabs key');
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'pMsXgVXv3BLzUgSXRplE';
+  const resp = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=3`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'xi-api-key': key, Accept: 'audio/mpeg' },
+      body: JSON.stringify({
+        text,
+        model_id: 'eleven_turbo_v2_5',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+      }),
+      signal: AbortSignal.timeout(25_000),
     }
+  );
+  if (!resp.ok) throw new Error(`ElevenLabs ${resp.status}: ${(await resp.text()).slice(0, 180)}`);
+  return resp.arrayBuffer();
+}
 
-    return new NextResponse(audioBuffer, { headers: { 'Content-Type': 'audio/mpeg' } });
-  } catch (err: any) {
-    console.error('TTS error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+async function openaiTts(text: string): Promise<ArrayBuffer> {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error('no OpenAI key');
+  const resp = await fetch('https://api.openai.com/v1/audio/speech', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'tts-1', voice: 'nova', input: text, response_format: 'mp3' }),
+    signal: AbortSignal.timeout(25_000),
+  });
+  if (!resp.ok) throw new Error(`OpenAI ${resp.status}: ${(await resp.text()).slice(0, 180)}`);
+  return resp.arrayBuffer();
+}
+
+export async function POST(req: NextRequest) {
+  const { text } = await req.json().catch(() => ({}));
+  if (!text) return NextResponse.json({ error: 'text required' }, { status: 400 });
+
+  const failures: string[] = [];
+  for (const [name, fn] of [
+    ['elevenlabs', elevenlabs],
+    ['openai', openaiTts],
+  ] as const) {
+    try {
+      const audio = await fn(text);
+      return new NextResponse(audio, {
+        headers: { 'Content-Type': 'audio/mpeg', 'X-TTS-Provider': name, 'Cache-Control': 'no-store' },
+      });
+    } catch (err: any) {
+      failures.push(String(err?.message || err));
+    }
   }
+  console.error('TTS failed:', failures);
+  return NextResponse.json({ error: 'No cloud voice available', details: failures }, { status: 503 });
 }
