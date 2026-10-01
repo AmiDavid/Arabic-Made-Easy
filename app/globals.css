@@ -9,9 +9,12 @@
   color-scheme: dark;
 }
 
-html,
+html {
+  background: #0a1428;   /* night-900 — base behind the fixed scene */
+}
+
 body {
-  background: #0a1428;   /* night-900 */
+  background: transparent;  /* let the fixed scene behind layout show through */
   color: #e8dcc0;        /* stone-100 */
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;

@@ -57,6 +57,24 @@ export default function Home() {
         <div className="flex justify-center mt-8 opacity-60 text-olive-500">
           <img src="/art/olive-branch.svg" alt="" className="w-56" />
         </div>
+
+        {/* Attribution */}
+        <div className="mt-6 mb-4 text-center">
+          <div className="arabic text-sm text-stone-200/80 leading-relaxed">
+            نِظَام تَعلِيم اللُغَة العَرَبِيَّة
+          </div>
+          <div className="arabic text-base text-gold-500 mt-1">
+            مِن تَأليف الأُستَاذ باسِل زبون
+          </div>
+          <div className="text-[11px] text-stone-200/60 mt-2 max-w-sm mx-auto">
+            Content, curriculum &amp; teaching method
+            <br />
+            © Basil Zboun. All rights reserved.
+          </div>
+          <div className="text-[10px] text-stone-200/40 mt-2">
+            App built by Amichai with Claude.
+          </div>
+        </div>
       </div>
     </div>
   );
