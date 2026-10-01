@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Layers, Grid3x3, Camera, Mic, BookMarked, Image as ImageIcon, Home, HelpCircle, PenLine } from 'lucide-react';
+import { BookOpen, Layers, Grid3x3, Camera, Mic, BookMarked, Home, HelpCircle, PenLine, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
@@ -12,9 +12,9 @@ const TABS = [
   { href: '/quiz', label: 'Quiz', icon: HelpCircle },
   { href: '/match', label: 'Match', icon: Grid3x3 },
   { href: '/write', label: 'Write', icon: PenLine },
+  { href: '/sentences', label: 'Translate', icon: Languages },
   { href: '/scan', label: 'Scan', icon: Camera },
   { href: '/voice', label: 'Voice', icon: Mic },
-  { href: '/pages-viewer', label: 'Pages', icon: ImageIcon },
 ];
 
 export default function Nav() {

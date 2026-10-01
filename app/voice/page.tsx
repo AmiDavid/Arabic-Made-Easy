@@ -1,10 +1,22 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { Mic, Loader2, Volume2, StopCircle, Play, AlertCircle } from 'lucide-react';
+import { Mic, Loader2, Volume2, StopCircle, AlertCircle, Plus, Check, RotateCcw, PencilLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
+import type { Topic } from '@/types';
 
-type Msg = { role: 'user' | 'assistant'; ar: string; en?: string };
+type Correction = { wrong: string; right: string; explanation: string };
+type NewWord = { arabic: string; english: string };
+type Msg = {
+  role: 'user' | 'assistant';
+  ar: string;
+  en?: string;
+  corrections?: Correction[];
+  new_words?: NewWord[];
+};
 type Mode = 'idle' | 'listening' | 'speaking' | 'thinking' | 'playing';
+
+const GREETING: Msg = { role: 'assistant', ar: 'مَرحَبَا! كِيف حَالَك اليَوم؟', en: 'Hello! How are you today?' };
 
 export default function VoicePage() {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -12,6 +24,10 @@ export default function VoicePage() {
   const [conversationActive, setConversationActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [topicId, setTopicId] = useState<string>('');
+  const [added, setAdded] = useState<Record<string, boolean>>({});
+  const topicRef = useRef<{ id?: string; name?: string }>({});
 
   // Refs that persist across renders
   const streamRef = useRef<MediaStream | null>(null);
@@ -40,13 +56,46 @@ export default function VoicePage() {
         setMode('idle');
       }
     };
-    setMessages([{ role: 'assistant', ar: 'مَرحَبَا! كِيف حَالَك اليَوم؟', en: 'Hello! How are you today?' }]);
-    messagesRef.current = [{ role: 'assistant', ar: 'مَرحَبَا! كِيف حَالَك اليَوم؟', en: 'Hello! How are you today?' }];
+    setMessages([GREETING]);
+    messagesRef.current = [GREETING];
+
+    supabase
+      .from('topics')
+      .select('*')
+      .order('sort_order')
+      .then(({ data }) => setTopics((data as Topic[]) || []));
 
     return () => {
       cleanupMic();
     };
   }, []);
+
+  useEffect(() => {
+    const t = topics.find((x) => x.id === topicId);
+    topicRef.current = t ? { id: t.id, name: t.name_en } : {};
+  }, [topicId, topics]);
+
+  function newConversation() {
+    stopConversation();
+    conversationIdRef.current = null;
+    setMessages([GREETING]);
+    messagesRef.current = [GREETING];
+    setAdded({});
+    setError(null);
+  }
+
+  async function addToVocab(key: string, items: { arabic: string; english: string; notes?: string }[]) {
+    try {
+      const resp = await fetch('/api/vocab/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, source: 'conversation' }),
+      });
+      if (resp.ok) setAdded((m) => ({ ...m, [key]: true }));
+    } catch {
+      /* ignore */
+    }
+  }
 
   function cleanupMic() {
     conversationActiveRef.current = false;
@@ -178,7 +227,15 @@ export default function VoicePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: conversationIdRef.current,
-          messages: msgs.map((m) => ({ role: m.role, ar: m.ar, en: m.en, ts: new Date().toISOString() })),
+          messages: msgs.map((m) => ({
+            role: m.role,
+            ar: m.ar,
+            en: m.en,
+            corrections: m.corrections || [],
+            new_words: m.new_words || [],
+            topic: topicRef.current.name || null,
+            ts: new Date().toISOString(),
+          })),
         }),
       });
       if (resp.ok) {
@@ -216,7 +273,12 @@ export default function VoicePage() {
       const chatResp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMsgs.map((m) => ({ role: m.role, content: m.ar })) }),
+        body: JSON.stringify({
+          messages: nextMsgs.map((m) => ({ role: m.role, content: m.ar })),
+          conversationId: conversationIdRef.current,
+          topicId: topicRef.current.id,
+          topicName: topicRef.current.name,
+        }),
       });
       if (!chatResp.ok) {
         const errJson = await chatResp.json().catch(() => ({}));
@@ -225,8 +287,15 @@ export default function VoicePage() {
       const chatJson = await chatResp.json();
       if (chatJson.error) throw new Error(`Chat: ${chatJson.error}`);
 
-      const aiMsg: Msg = { role: 'assistant', ar: chatJson.arabic, en: chatJson.english };
-      const withAi = [...nextMsgs, aiMsg];
+      // Corrections belong to the learner's message; new words to the teacher's reply
+      const correctedUser: Msg = { ...userMsg, corrections: chatJson.corrections || [] };
+      const aiMsg: Msg = {
+        role: 'assistant',
+        ar: chatJson.arabic,
+        en: chatJson.english,
+        new_words: chatJson.new_words || [],
+      };
+      const withAi = [...nextMsgs.slice(0, -1), correctedUser, aiMsg];
       messagesRef.current = withAi;
       setMessages(withAi);
 
@@ -301,13 +370,35 @@ export default function VoicePage() {
           ? "Continuous mode. Just speak — I'll reply when you pause. Stays live until you tap stop."
           : "Tap the mic to start. Continuous mode — no need to hold or tap again between messages."}
       </p>
-      <div className="flex items-center gap-3 mb-4">
-        <a href="/voice-training" className="text-xs text-gold-500 hover:text-gold-400">
-          🎤 Train a Bethlehem/Palestinian voice →
-        </a>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
         <a href="/history" className="text-xs text-gold-500 hover:text-gold-400">
-          📜 Past conversations →
+          Past conversations &amp; weekly recap
         </a>
+        <a href="/voice-training" className="text-xs text-gold-500 hover:text-gold-400">
+          Train a Bethlehem voice
+        </a>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <select
+          value={topicId}
+          onChange={(e) => setTopicId(e.target.value)}
+          className="flex-1 bg-white/5 border hairline rounded-xl px-3 py-2 text-sm"
+          aria-label="Conversation topic"
+        >
+          <option value="">Free conversation</option>
+          {topics.map((t) => (
+            <option key={t.id} value={t.id}>
+              Talk about: {t.name_en}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={newConversation}
+          className="bg-white/5 hover:bg-white/10 border hairline rounded-xl px-3 py-2 text-sm flex items-center gap-1.5"
+        >
+          <RotateCcw className="w-3.5 h-3.5" /> New
+        </button>
       </div>
 
       {error && (
@@ -322,17 +413,74 @@ export default function VoicePage() {
         {messages.map((m, i) => (
           <div
             key={i}
-            className={cn('rounded-2xl p-3 pop', m.role === 'user' ? 'bg-brand-500/10 ml-8' : 'bg-white/[0.03] mr-8')}
+            className={cn(
+              'rounded-2xl p-3 pop',
+              m.role === 'user' ? 'bg-gold-500/10 ml-8' : 'bg-night-800/70 border hairline mr-8'
+            )}
           >
-            <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-              {m.role === 'user' ? 'You' : 'Teacher'}
-            </div>
+            <div className="text-[11px] text-stone-200/50 mb-1">{m.role === 'user' ? 'You' : 'Teacher'}</div>
             <div className="arabic text-right">{m.ar}</div>
-            {m.en && <div className="text-sm text-gray-400 mt-2 border-t hairline pt-2">{m.en}</div>}
+            {m.en && <div className="text-sm text-stone-200/70 mt-2 border-t hairline pt-2">{m.en}</div>}
+
+            {/* Corrections on the learner's message */}
+            {m.corrections?.map((c, j) => {
+              const key = `c-${i}-${j}`;
+              return (
+                <div key={key} className="mt-2 rounded-xl bg-night-900/60 border border-gold-500/30 p-2.5">
+                  <div className="flex items-center gap-1.5 text-[11px] text-gold-400 mb-1">
+                    <PencilLine className="w-3 h-3" /> Correction
+                  </div>
+                  <div className="text-sm">
+                    <span className="arabic line-through text-rose-300/80">{c.wrong}</span>
+                    <span className="mx-2 text-stone-200/50">→</span>
+                    <span className="arabic text-olive-200">{c.right}</span>
+                  </div>
+                  <div className="text-xs text-stone-200/70 mt-1">{c.explanation}</div>
+                  <button
+                    onClick={() =>
+                      addToVocab(key, [{ arabic: c.right, english: c.explanation, notes: `You said: ${c.wrong}` }])
+                    }
+                    disabled={added[key]}
+                    className="mt-1.5 text-xs text-gold-500 flex items-center gap-1 disabled:text-olive-300"
+                  >
+                    {added[key] ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                    {added[key] ? 'Added to practice' : 'Practise this'}
+                  </button>
+                </div>
+              );
+            })}
+
+            {/* New words in the teacher's reply */}
+            {m.new_words && m.new_words.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {m.new_words.map((w, j) => {
+                  const key = `w-${i}-${j}`;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => addToVocab(key, [w])}
+                      disabled={added[key]}
+                      className={cn(
+                        'text-xs rounded-full px-2.5 py-1 border flex items-center gap-1',
+                        added[key]
+                          ? 'border-olive-500/50 text-olive-200 bg-olive-500/10'
+                          : 'hairline bg-white/5 hover:bg-white/10'
+                      )}
+                      title="Add to my vocabulary"
+                    >
+                      {added[key] ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                      <span className="arabic text-[1.05em] leading-none">{w.arabic}</span>
+                      <span className="text-stone-200/60">{w.english}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {m.role === 'assistant' && (
               <button
                 onClick={() => speak(m.ar)}
-                className="mt-2 text-xs text-brand-500 hover:text-brand-600 flex items-center gap-1"
+                className="mt-2 text-xs text-gold-500 hover:text-gold-400 flex items-center gap-1"
               >
                 <Volume2 className="w-3 h-3" /> Play again
               </button>

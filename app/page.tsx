@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, Layers, Grid3x3, Camera, Mic, BookMarked, Image as ImageIcon, HelpCircle, PenLine } from 'lucide-react';
+import { BookOpen, Layers, Grid3x3, Camera, Mic, BookMarked, Image as ImageIcon, HelpCircle, PenLine, Languages, History } from 'lucide-react';
 
 const TILES = [
   { href: '/catalog', title: 'Vocabulary', ar: 'الكَلِمَات', desc: 'Browse & search 2,000+ words', icon: BookOpen, accent: 'from-stone-200/15 to-stone-500/5' },
@@ -8,8 +8,10 @@ const TILES = [
   { href: '/quiz', title: 'Quiz', ar: 'الاِختِبَار', desc: 'Multiple choice — pick the right one', icon: HelpCircle, accent: 'from-olive-500/20 to-gold-500/10' },
   { href: '/match', title: 'Matching', ar: 'التَوفِيق', desc: 'Pair Arabic ↔ English', icon: Grid3x3, accent: 'from-terracotta-400/20 to-terracotta-600/5' },
   { href: '/write', title: 'Write it', ar: 'الكِتَابَة', desc: 'Type Arabic yourself', icon: PenLine, accent: 'from-gold-400/20 to-stone-500/10' },
+  { href: '/sentences', title: 'Translate sentences', ar: 'التَرجَمَة', desc: 'New sentences from your vocab', icon: Languages, accent: 'from-olive-500/25 to-night-700/5' },
   { href: '/scan', title: 'Scan a page', ar: 'المَسح', desc: 'Add new notebook pages', icon: Camera, accent: 'from-night-500/25 to-night-700/5' },
   { href: '/voice', title: 'Voice chat', ar: 'المُحَادَثَة', desc: 'Practice speaking Palestinian', icon: Mic, accent: 'from-gold-400/20 to-terracotta-500/10' },
+  { href: '/history', title: 'History & recap', ar: 'المُرَاجَعَة', desc: 'Past chats, weekly review', icon: History, accent: 'from-terracotta-400/15 to-gold-500/5' },
   { href: '/pages-viewer', title: 'Notebook pages', ar: 'الدَفتَر', desc: 'Browse original scans', icon: ImageIcon, accent: 'from-stone-500/15 to-stone-700/5' },
 ];
 

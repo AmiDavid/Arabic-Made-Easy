@@ -27,7 +27,17 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from('topics').select('*').order('sort_order').then(({ data }) => setTopics((data as Topic[]) || []));
+    supabase.from('topics').select('*').order('sort_order').then(({ data }) => {
+      const list = (data as Topic[]) || [];
+      setTopics(list);
+      // Support /quiz?topic=<slug> (e.g. from the weekly recap)
+      const slug = new URLSearchParams(window.location.search).get('topic');
+      const match = slug && list.find((t) => t.slug === slug);
+      if (match) {
+        setQ(null);
+        setTopicId(match.id);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -100,7 +110,7 @@ export default function QuizPage() {
       </div>
 
       <div className="flex gap-2 mb-4">
-        <select value={topicId} onChange={(e) => setTopicId(e.target.value)} className="flex-1 bg-white/5 border hairline rounded-xl px-3 py-2 text-sm">
+        <select value={topicId} onChange={(e) => { setQ(null); setTopicId(e.target.value); }} className="flex-1 bg-white/5 border hairline rounded-xl px-3 py-2 text-sm">
           <option value="all">All topics</option>
           {topics.map((t) => <option key={t.id} value={t.id}>{t.name_en}</option>)}
         </select>
