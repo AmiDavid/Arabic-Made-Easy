@@ -3,7 +3,7 @@ import './globals.css';
 import Nav from '@/components/nav';
 
 export const metadata: Metadata = {
-  title: 'Arab Made Easy',
+  title: 'Arabic Made Easy',
   description: 'Learn Palestinian Arabic your way',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },

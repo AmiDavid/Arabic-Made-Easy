@@ -15,7 +15,7 @@ export default function Home() {
   return (
     <div className="max-w-5xl mx-auto px-4 pt-8 pb-4">
       <header className="mb-8">
-        <div className="text-xs uppercase tracking-[0.2em] text-brand-500 font-semibold mb-1">Arab Made Easy</div>
+        <div className="text-xs uppercase tracking-[0.2em] text-brand-500 font-semibold mb-1">Arabic Made Easy</div>
         <h1 className="text-3xl font-bold">أَهلًا فِيك 👋</h1>
         <p className="text-gray-400 mt-1">Pick where to start today.</p>
       </header>
