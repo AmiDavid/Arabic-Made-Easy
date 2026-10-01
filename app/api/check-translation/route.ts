@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateText, parseJSON } from '@/lib/ai';
+import { generateJSON } from '@/lib/ai';
+
+export const maxDuration = 60;
 
 /**
  * POST /api/check-translation
@@ -16,13 +18,29 @@ Be fair and encouraging:
 - If they used MSA/Fusha where Palestinian speakers would say it differently, the verdict is "almost" and you explain the Palestinian form.
 - "correct" = a native speaker would say this. "almost" = understandable but with a small grammar, word-choice or dialect issue. "wrong" = the meaning is lost or the structure is broken.
 
-Reply with ONLY this JSON:
-{
-  "verdict": "correct" | "almost" | "wrong",
-  "corrected": "the best version of THEIR sentence in Palestinian Arabic with tashkeel (keep their wording where it was fine)",
-  "feedback": "1-2 short sentences in English: what was good, and the main thing to fix",
-  "issues": [{ "theirs": "...", "better": "...", "why": "short English reason" }]
-}`;
+Answer through the respond tool:
+- verdict
+- corrected: the best version of THEIR sentence in Palestinian Arabic with tashkeel (keep their wording where it was fine)
+- feedback: 1-2 short sentences in English: what was good, and the main thing to fix
+- issues: each specific problem (their words, a better version, a short English reason); empty list if none`;
+
+const SCHEMA = {
+  type: 'object',
+  properties: {
+    verdict: { type: 'string', enum: ['correct', 'almost', 'wrong'] },
+    corrected: { type: 'string' },
+    feedback: { type: 'string' },
+    issues: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { theirs: { type: 'string' }, better: { type: 'string' }, why: { type: 'string' } },
+        required: ['theirs', 'better', 'why'],
+      },
+    },
+  },
+  required: ['verdict', 'corrected', 'feedback', 'issues'],
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,7 +48,7 @@ export async function POST(req: NextRequest) {
     if (!english || !attempt) {
       return NextResponse.json({ error: 'english and attempt required' }, { status: 400 });
     }
-    const text = await generateText({
+    const { data, raw } = await generateJSON({
       system: SYSTEM,
       messages: [
         {
@@ -38,15 +56,15 @@ export async function POST(req: NextRequest) {
           content: `English sentence: ${english}\nReference translation: ${reference || '(none)'}\nLearner's translation: ${attempt}`,
         },
       ],
+      schema: SCHEMA,
       tier: 'smart',
-      maxTokens: 800,
-      json: true,
+      maxTokens: 1000,
     });
-    const parsed = parseJSON(text);
-    if (!parsed?.verdict) {
-      return NextResponse.json({ error: 'Could not grade this one, try again.' }, { status: 500 });
+    if (!data?.verdict) {
+      console.error('check-translation: bad output', raw);
+      return NextResponse.json({ error: 'Could not grade this one, try again.' }, { status: 502 });
     }
-    return NextResponse.json(parsed);
+    return NextResponse.json(data);
   } catch (err: any) {
     console.error('check-translation error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

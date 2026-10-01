@@ -74,8 +74,8 @@ export default function SentencesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topicId: topicId || undefined, topicName: topic?.name_en, level, count }),
       });
-      const json = await resp.json();
-      if (json.error) throw new Error(json.error);
+      const json = await resp.json().catch(() => ({ error: `Server error (HTTP ${resp.status})` }));
+      if (json.error) throw new Error(json.debug ? `${json.error} — details: ${json.debug}` : json.error);
       setSentences(json.sentences);
     } catch (e: any) {
       setError(e.message);

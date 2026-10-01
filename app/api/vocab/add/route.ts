@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const existing = new Set<string>();
     let from = 0;
     while (true) {
-      const { data } = await admin.from('entries').select('arabic').range(from, from + 999);
+      const { data } = await admin.from('entries').select('arabic').order('id').range(from, from + 999);
       if (!data?.length) break;
       for (const e of data) existing.add(stripDiacritics(String(e.arabic)).trim());
       if (data.length < 1000) break;

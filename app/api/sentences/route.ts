@@ -1,6 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateText, parseJSON } from '@/lib/ai';
+import { generateJSON } from '@/lib/ai';
 import { supabaseAdmin } from '@/lib/supabase';
+
+export const maxDuration = 60;
+
+const SCHEMA = {
+  type: 'object',
+  properties: {
+    sentences: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          english: { type: 'string' },
+          arabic: { type: 'string' },
+          transliteration: { type: 'string' },
+          words_used: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: { arabic: { type: 'string' }, english: { type: 'string' } },
+              required: ['arabic', 'english'],
+            },
+          },
+          grammar_note: { type: 'string' },
+        },
+        required: ['english', 'arabic', 'transliteration', 'words_used', 'grammar_note'],
+      },
+    },
+  },
+  required: ['sentences'],
+};
 
 /**
  * POST /api/sentences
@@ -63,31 +93,24 @@ Write ${n} natural English sentences for the learner to translate into Palestini
 
 Learner's vocabulary: ${sample.map((e) => `${e.arabic} = ${e.english}`).join('; ')}
 
-Reply with ONLY this JSON:
-{
-  "sentences": [
-    {
-      "english": "the sentence to translate",
-      "arabic": "Palestinian Arabic translation with tashkeel",
-      "transliteration": "Latin-letter pronunciation",
-      "words_used": [{ "arabic": "...", "english": "..." }],
-      "grammar_note": "one short line about the grammar point this sentence practises"
-    }
-  ]
-}`;
+Return the sentences through the respond tool. For each sentence give: english (the sentence to translate), arabic (Palestinian translation with tashkeel), transliteration (Latin-letter pronunciation), words_used (the vocabulary words it uses), grammar_note (one short line about the grammar it practises).`;
 
-    const text = await generateText({
+    const { data, raw } = await generateJSON<{ sentences: any[] }>({
       system,
       messages: [{ role: 'user', content: `Generate ${n} sentences.` }],
+      schema: SCHEMA,
       tier: 'smart',
-      maxTokens: 3000,
-      json: true,
+      maxTokens: 4000,
     });
-    const parsed = parseJSON<{ sentences: any[] }>(text);
-    if (!parsed?.sentences?.length) {
-      return NextResponse.json({ error: 'Could not generate sentences, try again.' }, { status: 500 });
+    const sentences = (data?.sentences || []).filter((s: any) => s?.english && s?.arabic);
+    if (!sentences.length) {
+      console.error('sentences: bad output', raw);
+      return NextResponse.json(
+        { error: 'Could not generate sentences, try again.', debug: raw.slice(0, 300) },
+        { status: 502 }
+      );
     }
-    return NextResponse.json({ sentences: parsed.sentences.slice(0, n) });
+    return NextResponse.json({ sentences: sentences.slice(0, n) });
   } catch (err: any) {
     console.error('sentences error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

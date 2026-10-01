@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateText, parseJSON, type ChatTurn } from '@/lib/ai';
+import { generateJSON, type ChatTurn } from '@/lib/ai';
 import { supabaseAdmin } from '@/lib/supabase';
 
 /**
@@ -30,14 +30,42 @@ Correcting mistakes:
 - Look only at the learner's LAST message. If it has a grammar, vocabulary or dialect mistake (including MSA where Palestinian is expected), add an item to "corrections": what they said, the correct Palestinian form, and a one-line English explanation.
 - Don't correct speech-recognition noise or tiny spelling variations. If there are no real mistakes, return an empty list.
 
-Reply with ONLY this JSON object, no other text:
-{
-  "arabic": "your reply in Palestinian Arabic with tashkeel",
-  "english": "literal English translation of your reply",
-  "corrections": [{ "wrong": "...", "right": "...", "explanation": "..." }],
-  "new_words": [{ "arabic": "word with tashkeel", "english": "meaning" }]
-}
-"new_words" = words in YOUR reply the learner probably doesn't know yet (max 3, empty list if none).`;
+Answer through the respond tool:
+- arabic: your reply in Palestinian Arabic with tashkeel
+- english: literal English translation of your reply
+- corrections: mistakes in the learner's last message (empty list if none)
+- new_words: words in YOUR reply the learner probably doesn't know yet (max 3, empty list if none)`;
+
+const SCHEMA = {
+  type: 'object',
+  properties: {
+    arabic: { type: 'string' },
+    english: { type: 'string' },
+    corrections: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          wrong: { type: 'string' },
+          right: { type: 'string' },
+          explanation: { type: 'string' },
+        },
+        required: ['wrong', 'right', 'explanation'],
+      },
+    },
+    new_words: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { arabic: { type: 'string' }, english: { type: 'string' } },
+        required: ['arabic', 'english'],
+      },
+    },
+  },
+  required: ['arabic', 'english', 'corrections', 'new_words'],
+};
+
+export const maxDuration = 60;
 
 async function buildContext(conversationId?: string, topicId?: string, topicName?: string) {
   const admin = supabaseAdmin();
@@ -116,31 +144,23 @@ export async function POST(req: NextRequest) {
       content: m.content_ar || m.content || '',
     }));
 
-    const text = await generateText({ system, messages: turns, tier: 'fast', maxTokens: 700, json: true });
-
-    const parsed = parseJSON<{
+    const { data: parsed, raw } = await generateJSON<{
       arabic?: string;
       english?: string;
       corrections?: Correction[];
       new_words?: NewWord[];
-    }>(text);
+    }>({ system, messages: turns, schema: SCHEMA, tier: 'fast', maxTokens: 900 });
 
-    if (parsed?.arabic) {
-      return NextResponse.json({
-        arabic: parsed.arabic,
-        english: parsed.english || '',
-        corrections: Array.isArray(parsed.corrections) ? parsed.corrections.filter((c) => c?.right) : [],
-        new_words: Array.isArray(parsed.new_words) ? parsed.new_words.filter((w) => w?.arabic) : [],
-      });
+    if (!parsed?.arabic) {
+      console.error('chat: no structured reply', raw);
+      return NextResponse.json({ error: 'The teacher did not answer properly, please say that again.' }, { status: 502 });
     }
 
-    // Fallback: model didn't return JSON — treat the text as the Arabic reply
-    const enMatch = text.match(/EN:\s*(.+)$/s);
     return NextResponse.json({
-      arabic: text.replace(/EN:.*$/s, '').trim(),
-      english: enMatch ? enMatch[1].trim() : '',
-      corrections: [],
-      new_words: [],
+      arabic: parsed.arabic,
+      english: parsed.english || '',
+      corrections: Array.isArray(parsed.corrections) ? parsed.corrections.filter((c) => c?.right) : [],
+      new_words: Array.isArray(parsed.new_words) ? parsed.new_words.filter((w) => w?.arabic) : [],
     });
   } catch (err: any) {
     console.error('chat error:', err);

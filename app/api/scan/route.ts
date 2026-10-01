@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const maxDuration = 60;
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { providers } from '@/lib/providers';
@@ -93,12 +94,20 @@ export async function POST(req: NextRequest) {
     const entries: Array<{ arabic: string; english: string; uncertain: boolean }> = parsed.entries || [];
     if (entries.length) {
       const admin = supabaseAdmin();
-      const { data: existing } = await admin
-        .from('entries')
-        .select('arabic, english, page_label')
-        .limit(5000);
+      // Fetch ALL existing entries (Supabase caps a request at 1000 rows → page through)
+      const existing: { arabic: string; english: string; page_label: string | null }[] = [];
+      for (let from = 0; from <= 20000; from += 1000) {
+        const { data } = await admin
+          .from('entries')
+          .select('arabic, english, page_label')
+          .order('id')
+          .range(from, from + 999);
+        if (!data?.length) break;
+        existing.push(...data);
+        if (data.length < 1000) break;
+      }
       const existingByBare = new Map<string, { english: string; page_label: string | null }[]>();
-      for (const e of existing || []) {
+      for (const e of existing) {
         const key = stripDiacritics(String(e.arabic)).trim();
         if (!existingByBare.has(key)) existingByBare.set(key, []);
         existingByBare.get(key)!.push({ english: e.english, page_label: e.page_label });

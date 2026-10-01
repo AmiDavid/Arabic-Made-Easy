@@ -1,49 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { transcribe } from '@/lib/stt';
 
-/**
- * Speech-to-text via Whisper.
- * Retries once on transient errors (OpenAI's Node SDK often throws "Connection
- * error" even when the next call succeeds).
- */
+export const maxDuration = 60;
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 25_000, maxRetries: 2 });
-
+/** POST /api/stt — multipart/form-data with an "audio" field → { text } */
 export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
     const audio = form.get('audio') as File | null;
     if (!audio) return NextResponse.json({ error: 'audio required' }, { status: 400 });
 
-    // Skip tiny blobs (likely silence/no speech)
-    const audioSize = (audio as any).size || 0;
-    if (audioSize < 2000) {
-      return NextResponse.json({ text: '', note: 'audio too short' });
-    }
+    // Very small recordings are silence / clicks — skip them
+    if ((audio.size || 0) < 2000) return NextResponse.json({ text: '', note: 'audio too short' });
 
-    const callWhisper = () =>
-      openai.audio.transcriptions.create({
-        file: audio,
-        model: 'whisper-1',
-        language: 'ar',
-        response_format: 'json',
-      });
-
-    let transcription;
-    try {
-      transcription = await callWhisper();
-    } catch (err: any) {
-      // One manual retry on "Connection error" or network glitches
-      await new Promise((r) => setTimeout(r, 500));
-      transcription = await callWhisper();
-    }
-
-    return NextResponse.json({ text: (transcription as any).text || '' });
+    const name = audio.name || `audio.${audio.type.includes('mp4') ? 'mp4' : 'webm'}`;
+    const text = await transcribe(audio, name);
+    return NextResponse.json({ text });
   } catch (err: any) {
     console.error('STT error:', err);
-    return NextResponse.json({
-      error: err?.message || 'STT failed',
-      hint: 'If this keeps happening, your OpenAI key may be out of credits or OpenAI is having an outage.',
-    }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'STT failed' }, { status: 500 });
   }
 }

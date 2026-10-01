@@ -1,110 +1,148 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Search, Filter } from 'lucide-react';
-import { stripDiacritics } from '@/lib/utils';
+import { Search, RefreshCw } from 'lucide-react';
+import { cn, stripDiacritics } from '@/lib/utils';
 import type { Entry, Topic } from '@/types';
+
+const PAGE_LIMIT = 500;
 
 export default function CatalogPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [q, setQ] = useState('');
-  const [topicId, setTopicId] = useState<string | 'all'>('all');
+  const [topicId, setTopicId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const lastLoad = useRef(0);
 
-  const [totalCount, setTotalCount] = useState(0);
+  const load = useCallback(async (quiet = false) => {
+    if (quiet) setRefreshing(true);
+    const { data: t } = await supabase.from('topics').select('*').order('sort_order');
+    setTopics((t as Topic[]) || []);
 
-  useEffect(() => {
-    (async () => {
-      // Topics
-      const { data: t } = await supabase.from('topics').select('*').order('sort_order');
-      setTopics((t as Topic[]) || []);
-
-      // Supabase caps each REST request at 1000 rows. Batch using .range().
-      const BATCH = 1000;
-      let all: Entry[] = [];
-      let from = 0;
-      let totalInHeader = 0;
-      while (true) {
-        const { data, count } = await supabase
-          .from('entries')
-          .select('*', { count: 'exact' })
-          .order('created_at', { ascending: false })
-          .range(from, from + BATCH - 1);
-        if (count !== null && count !== undefined) totalInHeader = count;
-        if (!data || data.length === 0) break;
-        all = all.concat(data as Entry[]);
-        if (data.length < BATCH) break;
-        from += BATCH;
-        if (from > 10000) break; // safety stop
-      }
-      setEntries(all);
-      setTotalCount(totalInHeader || all.length);
-      setLoading(false);
-    })();
+    // Supabase caps each request at 1000 rows → fetch in pages.
+    // Order by created_at AND id: many rows share the same created_at (bulk import),
+    // and paging on a non-unique order returns duplicates and skips rows.
+    const BATCH = 1000;
+    const byId = new Map<string, Entry>();
+    for (let from = 0; from <= 20000; from += BATCH) {
+      const { data, error } = await supabase
+        .from('entries')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(from, from + BATCH - 1);
+      if (error || !data?.length) break;
+      for (const e of data as Entry[]) byId.set(e.id, e);
+      if (data.length < BATCH) break;
+    }
+    setEntries(Array.from(byId.values()));
+    lastLoad.current = Date.now();
+    setLoading(false);
+    setRefreshing(false);
   }, []);
 
-  const filtered = useMemo(() => {
+  useEffect(() => {
+    load();
+    // Reload when coming back to the app (e.g. after scanning a page elsewhere)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastLoad.current > 20_000) load(true);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [load]);
+
+  const matching = useMemo(() => {
     let list = entries;
     if (topicId !== 'all') list = list.filter((e) => e.topic_id === topicId);
     if (q.trim()) {
-      const bare = stripDiacritics(q.toLowerCase());
+      const bare = stripDiacritics(q.toLowerCase().trim());
       list = list.filter(
-        (e) =>
-          stripDiacritics(e.arabic).toLowerCase().includes(bare) ||
-          e.english.toLowerCase().includes(bare)
+        (e) => stripDiacritics(e.arabic).toLowerCase().includes(bare) || e.english.toLowerCase().includes(bare)
       );
     }
-    return list.slice(0, 500);
+    return list;
   }, [entries, q, topicId]);
+
+  const shown = matching.slice(0, PAGE_LIMIT);
+  const filtering = topicId !== 'all' || q.trim() !== '';
+
+  function changeTopic(id: string) {
+    setTopicId(id);
+    window.scrollTo({ top: 0 });
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 pt-6">
-      <h1 className="text-2xl font-bold mb-1">Vocabulary</h1>
-      <p className="text-sm text-gray-400 mb-4">{totalCount.toLocaleString()} entries</p>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold">Vocabulary</h1>
+        <button
+          onClick={() => load(true)}
+          className="text-xs text-stone-200/60 hover:text-gold-400 flex items-center gap-1"
+          aria-label="Reload vocabulary"
+        >
+          <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} /> Reload
+        </button>
+      </div>
+      <p className="text-sm text-stone-200/70 mb-4">
+        {loading
+          ? 'Loading…'
+          : filtering
+            ? `${matching.length.toLocaleString()} of ${entries.length.toLocaleString()} entries`
+            : `${entries.length.toLocaleString()} entries`}
+      </p>
 
-      <div className="flex gap-2 mb-3">
+      <div className="flex gap-2 mb-3 sticky top-0 z-10 bg-night-900/90 backdrop-blur py-2 -mx-4 px-4">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-200/50" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search Arabic or English…"
-            className="w-full bg-white/5 border hairline rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full bg-white/5 border hairline rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
           />
         </div>
         <select
           value={topicId}
-          onChange={(e) => setTopicId(e.target.value)}
-          className="bg-white/5 border hairline rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          onChange={(e) => changeTopic(e.target.value)}
+          className="max-w-[45%] bg-white/5 border hairline rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+          aria-label="Filter by topic"
         >
           <option value="all">All topics</option>
           {topics.map((t) => (
-            <option key={t.id} value={t.id}>{t.name_en}</option>
+            <option key={t.id} value={t.id}>
+              {t.name_en}
+            </option>
           ))}
         </select>
       </div>
 
       {loading ? (
-        <div className="text-center text-gray-500 py-12">Loading…</div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center text-gray-500 py-12">No matches.</div>
+        <div className="text-center text-stone-200/60 py-12">Loading…</div>
+      ) : shown.length === 0 ? (
+        <div className="text-center text-stone-200/60 py-12">No matches.</div>
       ) : (
-        <ul className="divide-y hairline border hairline rounded-2xl overflow-hidden bg-white/[0.02]">
-          {filtered.map((e) => (
-            <li key={e.id} className="p-3 flex items-baseline gap-4 hover:bg-white/[0.03]">
+        <ul
+          key={`${topicId}|${q}`}
+          className="divide-y hairline border hairline rounded-2xl overflow-hidden bg-night-800/60"
+        >
+          {shown.map((e) => (
+            <li key={e.id} className="p-3 flex items-baseline gap-4">
               <div className="arabic flex-1 text-right">{e.arabic}</div>
               <div className="flex-1 text-sm">
                 <div>{e.english.replace('[?]', '')}</div>
-                <div className="text-[10px] text-gray-500 mt-0.5">{e.page_label || '—'}</div>
+                <div className="text-[11px] text-stone-200/50 mt-0.5">{e.page_label || '—'}</div>
               </div>
-              {e.uncertain && <span className="text-[10px] text-amber-400">?</span>}
+              {e.uncertain && <span className="text-[11px] text-amber-400" title="Uncertain reading">?</span>}
             </li>
           ))}
         </ul>
       )}
-      {filtered.length === 500 && (
-        <div className="text-xs text-gray-500 text-center mt-3">Showing first 500 — refine search to see more.</div>
+      {matching.length > PAGE_LIMIT && (
+        <div className="text-xs text-stone-200/60 text-center mt-3">
+          Showing the first {PAGE_LIMIT} of {matching.length.toLocaleString()} — search or pick a topic to narrow it down.
+        </div>
       )}
     </div>
   );

@@ -27,6 +27,7 @@ export default function VoicePage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [topicId, setTopicId] = useState<string>('');
   const [added, setAdded] = useState<Record<string, boolean>>({});
+  const [stage, setStage] = useState<string>('');
   const topicRef = useRef<{ id?: string; name?: string }>({});
 
   // Refs that persist across renders
@@ -250,9 +251,10 @@ export default function VoicePage() {
   async function processUserAudio(blob: Blob) {
     try {
       setMode('thinking');
+      setStage('Hearing you…');
       const form = new FormData();
       form.append('audio', blob, `user.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`);
-      const sttResp = await fetch('/api/stt', { method: 'POST', body: form });
+      const sttResp = await fetchWithTimeout('/api/stt', { method: 'POST', body: form }, 35_000, 'Speech recognition');
       if (!sttResp.ok) {
         const errJson = await sttResp.json().catch(() => ({}));
         throw new Error(`STT: ${errJson.error || sttResp.statusText}`);
@@ -270,16 +272,22 @@ export default function VoicePage() {
       messagesRef.current = nextMsgs;
       setMessages(nextMsgs);
 
-      const chatResp = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: nextMsgs.map((m) => ({ role: m.role, content: m.ar })),
-          conversationId: conversationIdRef.current,
-          topicId: topicRef.current.id,
-          topicName: topicRef.current.name,
-        }),
-      });
+      setStage('Thinking…');
+      const chatResp = await fetchWithTimeout(
+        '/api/chat',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: nextMsgs.map((m) => ({ role: m.role, content: m.ar })),
+            conversationId: conversationIdRef.current,
+            topicId: topicRef.current.id,
+            topicName: topicRef.current.name,
+          }),
+        },
+        45_000,
+        'The teacher'
+      );
       if (!chatResp.ok) {
         const errJson = await chatResp.json().catch(() => ({}));
         throw new Error(`Chat: ${errJson.error || chatResp.statusText}`);
@@ -317,11 +325,16 @@ export default function VoicePage() {
   async function speak(text: string) {
     try {
       setMode('playing');
-      const resp = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
+      const resp = await fetchWithTimeout(
+        '/api/tts',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        },
+        30_000,
+        'The voice'
+      );
       if (!resp.ok) {
         const errJson = await resp.json().catch(() => ({}));
         throw new Error(`TTS: ${errJson.error || resp.statusText}`);
@@ -346,7 +359,7 @@ export default function VoicePage() {
   const statusLabel = {
     idle: conversationActive ? 'Starting…' : 'Tap to start conversation',
     listening: '🎤 Listening — just talk',
-    thinking: '💭 Thinking…',
+    thinking: stage || 'Thinking…',
     playing: '🔊 Teacher speaking…',
     speaking: '',
   }[mode];
@@ -527,6 +540,20 @@ export default function VoicePage() {
       </div>
     </div>
   );
+}
+
+// fetch that gives up after `ms` with a clear message instead of hanging forever
+async function fetchWithTimeout(url: string, init: RequestInit, ms: number, what: string) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } catch (err: any) {
+    if (err?.name === 'AbortError') throw new Error(`${what} took too long to answer (${Math.round(ms / 1000)}s). Try again.`);
+    throw new Error(`${what}: network problem (${err?.message || err})`);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // Pick a MIME type the browser supports and that Whisper accepts
