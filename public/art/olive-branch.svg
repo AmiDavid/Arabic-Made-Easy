@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 40" width="240" height="40">
+  <g fill="currentColor" opacity="0.5">
+    <!-- central stem -->
+    <path d="M 50,20 Q 120,15 190,20" stroke="currentColor" stroke-width="1" fill="none"/>
+    <!-- left-side leaves -->
+    <ellipse cx="70" cy="18" rx="10" ry="3" transform="rotate(-15 70 18)"/>
+    <ellipse cx="90" cy="22" rx="10" ry="3" transform="rotate(10 90 22)"/>
+    <ellipse cx="110" cy="17" rx="10" ry="3" transform="rotate(-10 110 17)"/>
+    <!-- olives -->
+    <circle cx="115" cy="22" r="2"/>
+    <circle cx="125" cy="19" r="2"/>
+    <!-- right-side leaves -->
+    <ellipse cx="140" cy="22" rx="10" ry="3" transform="rotate(10 140 22)"/>
+    <ellipse cx="160" cy="17" rx="10" ry="3" transform="rotate(-10 160 17)"/>
+    <ellipse cx="180" cy="22" rx="10" ry="3" transform="rotate(15 180 22)"/>
+  </g>
+</svg>

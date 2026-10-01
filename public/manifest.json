@@ -1,11 +1,11 @@
 {
-  "name": "Arab Made Easy",
+  "name": "Arabic Made Easy",
   "short_name": "Arabic",
   "description": "Learn Palestinian Arabic with your own notebook",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0f1a",
-  "theme_color": "#7c3aed",
+  "background_color": "#0a1428",
+  "theme_color": "#d4a64a",
   "orientation": "portrait",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },

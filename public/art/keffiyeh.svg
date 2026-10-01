@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">
+  <!-- Classic keffiyeh fishnet + olive-leaf motif, simplified. Tiles seamlessly. -->
+  <g fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.5">
+    <!-- diagonal fishnet lattice -->
+    <path d="M 0,0 L 80,80 M 20,0 L 80,60 M 40,0 L 80,40 M 60,0 L 80,20 M 0,20 L 60,80 M 0,40 L 40,80 M 0,60 L 20,80"/>
+    <path d="M 80,0 L 0,80 M 60,0 L 0,60 M 40,0 L 0,40 M 20,0 L 0,20 M 80,20 L 20,80 M 80,40 L 40,80 M 80,60 L 60,80"/>
+  </g>
+  <!-- olive-leaf diamond motifs at the crossings -->
+  <g fill="currentColor" opacity="0.65">
+    <path d="M 20,20 L 23,17 L 20,14 L 17,17 Z"/>
+    <path d="M 60,20 L 63,17 L 60,14 L 57,17 Z"/>
+    <path d="M 20,60 L 23,57 L 20,54 L 17,57 Z"/>
+    <path d="M 60,60 L 63,57 L 60,54 L 57,57 Z"/>
+    <path d="M 40,40 L 44,36 L 40,32 L 36,36 Z"/>
+    <!-- small eye dots -->
+    <circle cx="40" cy="0" r="0.8"/>
+    <circle cx="40" cy="80" r="0.8"/>
+    <circle cx="0" cy="40" r="0.8"/>
+    <circle cx="80" cy="40" r="0.8"/>
+  </g>
+</svg>

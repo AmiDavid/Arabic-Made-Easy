@@ -18,7 +18,7 @@ const TABS = [
 export default function Nav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 border-t hairline bg-[#0a0a12]/95 backdrop-blur">
+    <nav className="fixed bottom-0 inset-x-0 z-50 border-t hairline bg-night-900/95 backdrop-blur">
       <div className="max-w-5xl mx-auto grid grid-cols-8 gap-1 px-2 py-2">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
@@ -28,7 +28,7 @@ export default function Nav() {
               href={href}
               className={cn(
                 'flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-[10px] transition',
-                active ? 'text-brand-500 bg-brand-500/10' : 'text-gray-400 hover:text-gray-100'
+                active ? 'text-gold-500 bg-gold-500/10' : 'text-stone-200/60 hover:text-stone-100'
               )}
             >
               <Icon className="w-5 h-5" />

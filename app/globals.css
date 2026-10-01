@@ -2,8 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Load an Arabic-friendly font */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+/* Fonts: Arabic + body + display serif for headlines */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&display=swap');
 
 :root {
   color-scheme: dark;
@@ -11,8 +11,8 @@
 
 html,
 body {
-  background: #0a0a12;
-  color: #e5e7eb;
+  background: #0a1428;   /* night-900 */
+  color: #e8dcc0;        /* stone-100 */
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }
@@ -24,8 +24,14 @@ body {
   line-height: 1.9;
 }
 
+.display {
+  font-family: 'Fraunces', serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+}
+
 .hairline {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(240, 230, 200, 0.1);
 }
 
 @keyframes pop {
@@ -33,3 +39,11 @@ body {
   100% { transform: scale(1); opacity: 1; }
 }
 .pop { animation: pop 0.18s ease-out; }
+
+/* Subtle keffiyeh texture overlay — toggle via .keffiyeh-tex class */
+.keffiyeh-tex {
+  background-image: url('/art/keffiyeh.svg');
+  background-size: 60px 60px;
+  background-repeat: repeat;
+  color: rgba(240, 230, 200, 0.08);  /* currentColor controls stroke/fill opacity */
+}
