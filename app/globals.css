@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Load an Arabic-friendly font */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0a0a12;
+  color: #e5e7eb;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.arabic {
+  font-family: 'Noto Naskh Arabic', Arial, serif;
+  direction: rtl;
+  font-size: 1.35em;
+  line-height: 1.9;
+}
+
+.hairline {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes pop {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pop { animation: pop 0.18s ease-out; }
