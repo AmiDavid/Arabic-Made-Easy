@@ -20,22 +20,40 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="font-sans">
-        {/* Subtle fixed background scene — Jerusalem/Bethlehem horizon on every page */}
+        {/* Night-sky base so stars read; the scene sits on top of this */}
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-0 -z-10"
+          className="pointer-events-none fixed inset-0 -z-20 bg-gradient-to-b from-night-900 via-night-800 to-night-900"
+        />
+        {/* The Jerusalem/Bethlehem scene — bottom-anchored, visible */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[60vh]"
           style={{
             backgroundImage: "url('/art/jerusalem-bethlehem.svg')",
             backgroundSize: 'cover',
             backgroundPosition: 'center bottom',
             backgroundRepeat: 'no-repeat',
-            opacity: 0.14,
+            opacity: 0.42,
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
           }}
         />
-        {/* Gradient to keep text legible */}
+        {/* Subtle star field (CSS-only radial dots) upper area */}
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-night-900/80 via-night-900/50 to-night-900/95"
+          className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[40vh] opacity-50"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 15% 20%, #f0e6c8 0.5px, transparent 1px),
+              radial-gradient(circle at 85% 15%, #f0e6c8 0.5px, transparent 1px),
+              radial-gradient(circle at 50% 35%, #f0e6c8 0.4px, transparent 1px),
+              radial-gradient(circle at 30% 50%, #f0e6c8 0.5px, transparent 1px),
+              radial-gradient(circle at 75% 45%, #f0e6c8 0.4px, transparent 1px),
+              radial-gradient(circle at 20% 70%, #f0e6c8 0.3px, transparent 1px)
+            `,
+            backgroundSize: '280px 280px, 220px 220px, 320px 320px, 180px 180px, 260px 260px, 300px 300px',
+          }}
         />
 
         <div className="min-h-dvh flex flex-col relative">

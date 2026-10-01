@@ -255,6 +255,9 @@ export default function VoicePage() {
           ? "I'm listening — just talk, I'll reply when you pause."
           : "Tap the mic to start a continuous conversation in Palestinian Arabic."}
       </p>
+      <a href="/voice-training" className="text-xs text-gold-500 hover:text-gold-400 inline-block mb-4">
+        🎤 Train a Bethlehem/Palestinian voice →
+      </a>
 
       {error && (
         <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-200 text-sm flex items-start gap-2">

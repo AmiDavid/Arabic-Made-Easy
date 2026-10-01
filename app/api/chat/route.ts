@@ -30,7 +30,9 @@ export async function POST(req: NextRequest) {
     if (providers.chat === 'anthropic') {
       const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
       const resp = await anthropic.messages.create({
-        model: 'claude-opus-4-7',
+        // Haiku is dramatically faster than Opus for short chat replies;
+        // Palestinian dialect quality stays good at this length.
+        model: 'claude-haiku-4-5',
         max_tokens: 400,
         system: SYSTEM,
         messages: messages.map((m: any) => ({ role: m.role, content: m.content_ar || m.content || '' })),
@@ -39,7 +41,8 @@ export async function POST(req: NextRequest) {
     } else {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const resp = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        // gpt-4o-mini: faster + cheaper than gpt-4o, still good at Levantine
+        model: 'gpt-4o-mini',
         max_tokens: 400,
         messages: [
           { role: 'system', content: SYSTEM },

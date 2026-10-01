@@ -2,27 +2,42 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { providers } from '@/lib/providers';
+import { supabaseAdmin } from '@/lib/supabase';
+import { stripDiacritics } from '@/lib/utils';
 
 /**
- * POST /api/scan  — OCR + categorization of a handwritten notebook page.
- * Uses Claude Vision if ANTHROPIC_API_KEY is set, else GPT-4o vision.
+ * POST /api/scan — OCR + categorization of a notebook page.
+ * Also detects whether the page is grammar or vocabulary.
+ * Flags entries that are already in the database.
  */
 
 const SYSTEM = `You are an OCR + categorization assistant for a Palestinian Arabic vocabulary notebook.
 
-The user photographs a handwritten notebook page. Your job:
-1. Extract every Arabic word/phrase and its English translation from the page. Preserve diacritics (tashkeel) exactly as written. If multiple English words are separated by / or comma, keep them together.
-2. Flag any reading you're unsure about by appending [?] to the English.
-3. Skip page headers/titles and grammar tables that aren't vocabulary pairs (note the page title in "title").
-4. Suggest one topic slug from:
+The user photographs a handwritten notebook page. First decide what kind of page this is:
+- "vocab" = a list of Arabic/English word pairs
+- "grammar" = a rule explanation with a verb table, conjugation examples, or a grammatical pattern
+- "mixed" = both
+
+Then extract everything:
+1. Vocabulary pairs: every Arabic word/phrase and its English translation. Preserve diacritics (tashkeel) exactly as written. Keep multi-word English like "to walk / hike" together as one entry.
+2. For grammar pages: also capture the rule title, a one-sentence summary, and any example sentences shown.
+3. Flag any uncertain reading with uncertain: true (don't put [?] in the text itself — just set the flag).
+4. Suggest ONE topic slug from this list, best match:
    time, colors, numbers-grammar, verbs-special, comparatives, market, house, clothing, body-meat, question-words, imperative, politics, elections, appliances, general
 
-Respond with ONLY valid JSON, no prose:
+Respond with ONLY valid JSON:
 {
+  "page_type": "vocab" | "grammar" | "mixed",
   "title": "short page title in English if visible",
   "suggested_topic_slug": "one-of-the-slugs-above",
+  "grammar": {
+    "title": "if grammar page: short English title",
+    "summary": "if grammar page: one sentence rule description",
+    "content": "if grammar page: brief explanation in markdown"
+  },
   "entries": [
-    { "arabic": "بَيت", "english": "house", "uncertain": false }
+    { "arabic": "بَيت", "english": "house", "uncertain": false },
+    ...
   ]
 }`;
 
@@ -36,7 +51,6 @@ export async function POST(req: NextRequest) {
     const dataUrl = `data:${mediaType};base64,${b64}`;
 
     let text: string;
-
     if (providers.vision === 'anthropic') {
       const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
       const resp = await anthropic.messages.create({
@@ -47,7 +61,7 @@ export async function POST(req: NextRequest) {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: mediaType as any, data: b64 } },
-            { type: 'text', text: 'Extract vocabulary from this notebook page.' },
+            { type: 'text', text: 'Extract everything from this notebook page.' },
           ],
         }],
       });
@@ -62,7 +76,7 @@ export async function POST(req: NextRequest) {
           {
             role: 'user',
             content: [
-              { type: 'text', text: 'Extract vocabulary from this notebook page.' },
+              { type: 'text', text: 'Extract everything from this notebook page.' },
               { type: 'image_url', image_url: { url: dataUrl } },
             ],
           },
@@ -73,7 +87,33 @@ export async function POST(req: NextRequest) {
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return NextResponse.json({ error: 'Could not parse response', raw: text }, { status: 500 });
-    return NextResponse.json(JSON.parse(jsonMatch[0]));
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // --- Duplicate detection: mark entries that already exist ---
+    const entries: Array<{ arabic: string; english: string; uncertain: boolean }> = parsed.entries || [];
+    if (entries.length) {
+      const admin = supabaseAdmin();
+      const { data: existing } = await admin
+        .from('entries')
+        .select('arabic, english, page_label')
+        .limit(5000);
+      const existingByBare = new Map<string, { english: string; page_label: string | null }[]>();
+      for (const e of existing || []) {
+        const key = stripDiacritics(String(e.arabic)).trim();
+        if (!existingByBare.has(key)) existingByBare.set(key, []);
+        existingByBare.get(key)!.push({ english: e.english, page_label: e.page_label });
+      }
+      parsed.entries = entries.map((e) => {
+        const key = stripDiacritics(e.arabic).trim();
+        const matches = existingByBare.get(key);
+        return {
+          ...e,
+          already_known: matches ? matches.map((m) => m.page_label).filter(Boolean).join(', ') || true : false,
+        };
+      });
+    }
+
+    return NextResponse.json(parsed);
   } catch (err: any) {
     console.error('scan error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

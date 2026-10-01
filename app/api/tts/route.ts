@@ -16,19 +16,23 @@ export async function POST(req: NextRequest) {
 
     if (providers.tts === 'elevenlabs') {
       const voiceId = process.env.ELEVENLABS_VOICE_ID || 'pMsXgVXv3BLzUgSXRplE';
-      const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'xi-api-key': process.env.ELEVENLABS_API_KEY!,
-          Accept: 'audio/mpeg',
-        },
-        body: JSON.stringify({
-          text,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-        }),
-      });
+      // Use streaming endpoint + turbo model + low-latency opt for fastest reply
+      const resp = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=3`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'xi-api-key': process.env.ELEVENLABS_API_KEY!,
+            Accept: 'audio/mpeg',
+          },
+          body: JSON.stringify({
+            text,
+            model_id: 'eleven_turbo_v2_5',  // 2-3x faster than multilingual_v2, good Arabic
+            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+          }),
+        }
+      );
       if (!resp.ok) return NextResponse.json({ error: `ElevenLabs: ${await resp.text()}` }, { status: 500 });
       audioBuffer = await resp.arrayBuffer();
     } else {
