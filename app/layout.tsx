@@ -25,19 +25,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           aria-hidden
           className="pointer-events-none fixed inset-0 -z-20 bg-gradient-to-b from-night-900 via-night-800 to-night-900"
         />
-        {/* The Jerusalem/Bethlehem horizon — bottom-anchored, clearly visible */}
+        {/* The Jerusalem/Bethlehem horizon — floats above the nav so it's visible */}
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-x-0 bottom-0 -z-10"
+          className="pointer-events-none fixed inset-x-0 -z-10"
           style={{
+            bottom: '112px',  // above the nav (72px) + credit pill
             backgroundImage: "url('/art/horizon.svg')",
             backgroundSize: '100% auto',
             backgroundPosition: 'center bottom',
             backgroundRepeat: 'no-repeat',
-            height: '280px',
-            opacity: 0.75,
-            maskImage: 'linear-gradient(to top, black 60%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 60%, transparent 100%)',
+            height: '220px',
+            opacity: 0.85,
+            maskImage: 'linear-gradient(to top, black 55%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 55%, transparent 100%)',
           }}
         />
         {/* Subtle star field (CSS-only radial dots) upper area */}
@@ -57,8 +58,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
 
+        {/* Solid dark band behind the nav + credit so horizon doesn't fight it */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 bg-gradient-to-t from-night-900 via-night-900/95 to-night-900/0"
+          style={{ height: '112px' }}
+        />
+
         <div className="min-h-dvh flex flex-col relative">
-          <main className="flex-1 pb-24">{children}</main>
+          <main className="flex-1 pb-28">{children}</main>
           <Credits />
           <Nav />
         </div>
