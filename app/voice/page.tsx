@@ -1,4 +1,5 @@
 'use client';
+import { guestName } from '@/lib/guest';
 import { useEffect, useRef, useState } from 'react';
 import { Mic, Loader2, Volume2, StopCircle, AlertCircle, Plus, Check, RotateCcw, PencilLine, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -335,6 +336,7 @@ export default function VoicePage() {
           body: JSON.stringify({
             messages: nextMsgs.map((m) => ({ role: m.role, content: m.ar })),
             conversationId: conversationIdRef.current,
+            guest: !!guestName(),
             topicId: topicRef.current.id,
             topicName: topicRef.current.name,
           }),
@@ -419,6 +421,7 @@ export default function VoicePage() {
 
   // ---------- saving + vocab ----------
   async function saveConversation(msgs: Msg[]) {
+    if (guestName()) return; // a guest's chats stay out of your history and recap
     try {
       const resp = await fetch('/api/conversations', {
         method: 'POST',

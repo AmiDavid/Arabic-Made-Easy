@@ -67,12 +67,12 @@ const SCHEMA = {
 
 export const maxDuration = 60;
 
-async function buildContext(conversationId?: string, topicId?: string, topicName?: string) {
+async function buildContext(conversationId?: string, topicId?: string, topicName?: string, guest = false) {
   const admin = supabaseAdmin();
   const parts: string[] = [];
 
-  // 1. Memory: the last few previous conversations
-  try {
+  // 1. Memory: the last few previous conversations (not for guests: those are Amichai's)
+  if (!guest) try {
     let q = admin
       .from('conversations')
       .select('id, messages, updated_at')
@@ -131,12 +131,12 @@ async function buildContext(conversationId?: string, topicId?: string, topicName
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, conversationId, topicId, topicName } = await req.json();
+    const { messages, conversationId, topicId, topicName, guest } = await req.json();
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'messages array required' }, { status: 400 });
     }
 
-    const context = await buildContext(conversationId, topicId, topicName);
+    const context = await buildContext(conversationId, topicId, topicName, !!guest);
     const system = context ? `${BASE_SYSTEM}\n\n${context}` : BASE_SYSTEM;
 
     const turns: ChatTurn[] = messages.map((m: any) => ({

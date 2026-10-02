@@ -1,5 +1,9 @@
 import Link from 'next/link';
+import { GuestBanner } from '@/components/guest-banner';
 import { BookOpen, Layers, Grid3x3, Camera, Mic, BookMarked, Image as ImageIcon, HelpCircle, PenLine, Languages, History, ShieldCheck } from 'lucide-react';
+
+// these use AI credits
+const AI_TILES = new Set(['/voice', '/scan', '/sentences']);
 
 const TILES = [
   { href: '/catalog', title: 'Vocabulary', ar: 'الكَلِمَات', desc: 'Browse & search 2,000+ words', icon: BookOpen, accent: 'from-stone-200/15 to-stone-500/5' },
@@ -40,6 +44,7 @@ export default function Home() {
 
       {/* TILES */}
       <div className="max-w-5xl mx-auto px-4 pt-6 pb-4">
+        <GuestBanner />
         <div className="grid grid-cols-2 gap-3">
           {TILES.map(({ href, title, ar, desc, icon: Icon, accent }) => (
             <Link
@@ -50,6 +55,11 @@ export default function Home() {
               <div className={`absolute -right-10 -top-10 w-32 h-32 rounded-full bg-gradient-to-br ${accent} blur-2xl group-hover:scale-110 transition`} />
               <div className="relative">
                 <Icon className="w-5 h-5 mb-3 text-gold-500" />
+                {AI_TILES.has(href) && (
+                  <span className="absolute top-0 right-0 text-[9px] font-bold tracking-wider rounded-full px-1.5 py-0.5 bg-gold-500/15 border border-gold-500/40 text-gold-300">
+                    AI
+                  </span>
+                )}
                 <div className="font-semibold text-stone-50">{title}</div>
                 <div className="arabic text-right text-gold-500/70 text-[0.85em] mt-0.5 leading-tight">{ar}</div>
                 <div className="text-xs text-stone-300/70 mt-1">{desc}</div>
