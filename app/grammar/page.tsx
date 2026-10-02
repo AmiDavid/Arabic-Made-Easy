@@ -38,11 +38,14 @@ export default function GrammarPage() {
     // /grammar?open=sc4-alif-maqsura-verbs → open that card and scroll to it
     const slug = new URLSearchParams(window.location.search).get('open');
     if (slug) {
-      const rule = GRAMMAR.find((g) => g.slug === slug);
-      if (rule) {
-        setOpen(slug);
-        setTimeout(() => document.getElementById(`rule-${slug}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
-      }
+      // works for built-in cards and for cards created by scanning (those arrive from the DB)
+      setOpen(slug);
+      const scroll = (tries: number) => {
+        const el = document.getElementById(`rule-${slug}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else if (tries > 0) setTimeout(() => scroll(tries - 1), 250);
+      };
+      setTimeout(() => scroll(12), 150);
     }
   }, []);
 

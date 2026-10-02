@@ -10,6 +10,38 @@ import type { Entry, Topic } from '@/types';
 
 const PAGE_LIMIT = 500;
 
+const escapeRe = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Search by whole words, not letters inside words: "fat" finds "fat" and
+ * "fat (food)", not "father". If nothing matches a whole word (you're still
+ * typing, e.g. "fath"), fall back to words that START with what you typed.
+ */
+function searchEntries(list: Entry[], query: string): Entry[] {
+  const raw = query.trim().toLowerCase();
+  const isArabic = /[\u0600-\u06FF]/.test(raw);
+  const term = isArabic ? stripDiacritics(raw) : raw;
+  const textOf = (e: Entry) => {
+    if (!isArabic) return e.english.toLowerCase();
+    const f = parseForms(e.arabic, e.english);
+    return stripDiacritics(`${e.arabic} ${f.second || ''}`);
+  };
+  // word boundaries that also work for Arabic: start/end, spaces, punctuation
+  const B = '(^|[\\s،,/()\\-.;:!?])';
+  const E = '($|[\\s،,/()\\-.;:!?])';
+  const whole = new RegExp(B + escapeRe(term) + E);
+  const prefix = new RegExp(B + escapeRe(term));
+  const exact = list.filter((e) => whole.test(textOf(e)));
+  const hits = exact.length ? exact : list.filter((e) => prefix.test(textOf(e)));
+  // closest first: entries where one meaning IS the word ("home / house / flat"), then shorter entries
+  const parts = (e: Entry) =>
+    isArabic
+      ? parseForms(e.arabic, e.english).main.split(' / ').map((x) => stripDiacritics(x).trim())
+      : e.english.toLowerCase().split(/[,/;]/).map((x) => x.replace(/\(.*?\)/g, '').trim());
+  const score = (e: Entry) => (parts(e).includes(term) ? 0 : 1000) + textOf(e).length;
+  return [...hits].sort((a, b) => score(a) - score(b));
+}
+
 export default function CatalogPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -68,13 +100,7 @@ export default function CatalogPage() {
       });
     }
     if (q.trim()) {
-      const bare = stripDiacritics(q.toLowerCase().trim());
-      list = list.filter(
-        (e) =>
-          stripDiacritics(e.arabic).toLowerCase().includes(bare) ||
-          stripDiacritics(parseForms(e.arabic, e.english).second || '').includes(bare) ||
-          e.english.toLowerCase().includes(bare)
-      );
+      list = searchEntries(list, q);
     }
     return list;
   }, [entries, q, topicId, wordType]);

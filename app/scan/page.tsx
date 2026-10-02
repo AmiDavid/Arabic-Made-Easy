@@ -29,7 +29,7 @@ export default function ScanPage() {
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
   const [entries, setEntries] = useState<Extracted[]>([]);
   const [topicId, setTopicId] = useState<string>('');
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState<null | { words: number; grammarSlug?: string; grammarTitle?: string }>(null);
   const [nextPage, setNextPage] = useState<number>(44);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function ScanPage() {
 
   async function handleFile(f: File) {
     setLoading(true);
-    setSaved(false);
+    setSaved(null);
     setEntries([]);
     setScanResult(null);
     const reader = new FileReader();
@@ -85,6 +85,8 @@ export default function ScanPage() {
     const anyGrammar = scanResult?.page_type !== 'vocab' && grammar?.title;
 
     const results: string[] = [];
+    let wordsSaved = 0;
+    let grammarSlug: string | undefined;
 
     if (toSave.length) {
       const rows = toSave.map((e) => ({
@@ -101,6 +103,7 @@ export default function ScanPage() {
       const { error } = await supabase.from('entries').insert(rows);
       if (error) return alert('Save failed: ' + error.message);
       results.push(`${rows.length} vocab entries saved`);
+      wordsSaved = rows.length;
     }
 
     if (anyGrammar && grammar) {
@@ -117,15 +120,16 @@ export default function ScanPage() {
       }, { onConflict: 'slug' });
       if (error) return alert('Grammar save failed: ' + error.message);
       results.push('grammar rule saved');
+      grammarSlug = slug;
     }
 
     if (!results.length) return alert('Nothing to save');
-    setSaved(true);
+    setSaved({ words: wordsSaved, grammarSlug, grammarTitle: grammar?.title });
     setEntries([]);
     setScanResult(null);
     setImgUrl(null);
     setNextPage(nextPage + 1);
-    setTimeout(() => setSaved(false), 3000);
+
   }
 
   const knownCount = entries.filter((e) => e.already_known).length;
@@ -134,8 +138,41 @@ export default function ScanPage() {
     <div className="max-w-2xl mx-auto px-4 pt-6">
       <h1 className="text-2xl font-bold mb-1">Scan a notebook page</h1>
       <p className="text-sm text-stone-200/60 mb-4">
-        Take or upload a photo — AI extracts vocabulary and grammar rules. You confirm what to save.
+        Photograph a page from your notebook and the app studies it for you.
       </p>
+
+      {!imgUrl && (
+        <details open className="mb-5 rounded-2xl border hairline bg-white/[0.03] p-4 text-sm group">
+          <summary className="font-semibold cursor-pointer list-none flex items-center justify-between">
+            How it works
+            <span className="text-xs text-stone-200/50 group-open:hidden">show</span>
+          </summary>
+          <ol className="mt-3 space-y-2.5 text-stone-200/80">
+            <li>
+              <b className="text-gold-300">1. It reads the page.</b> The AI reads your handwriting, Arabic and English,
+              and works out whether the page is grammar, vocabulary or both.
+            </li>
+            <li>
+              <b className="text-gold-300">2. Grammar becomes a new card in the Grammar tab.</b> It doesn't just copy the
+              page: it explains the rule the way Basil teaches it (suf / pre, the ★ exception people, S.C. cases), with
+              full past / present / future / command tables, pronunciation and example sentences.
+            </li>
+            <li>
+              <b className="text-gold-300">3. Words go into your vocabulary</b> under the matching topic, keeping both
+              forms (singular، plural · past، present). Verbs are sorted into their case (S.C.3, S.C.4, S.C.5…), and a
+              verb written with one form gets a suggested present ✦.
+            </li>
+            <li>
+              <b className="text-gold-300">4. No duplicates.</b> Words you already have are flagged with their page and
+              left unticked, so only new words are added.
+            </li>
+            <li>
+              <b className="text-gold-300">5. You check, then save.</b> Fix any word, untick what you don't want, and
+              tap Save. Nothing is added until you do.
+            </li>
+          </ol>
+        </details>
+      )}
 
       {!imgUrl && (
         <div className="grid grid-cols-2 gap-3">
@@ -246,7 +283,24 @@ export default function ScanPage() {
       )}
 
       {saved && (
-        <div className="mt-4 text-center text-olive-300 pop">✓ Saved!</div>
+        <div className="mt-4 p-4 rounded-2xl border border-olive-500/40 bg-olive-500/10 pop text-sm">
+          <div className="font-semibold text-olive-300 mb-1">✓ Saved</div>
+          {saved.words > 0 && (
+            <div>
+              {saved.words} word{saved.words === 1 ? '' : 's'} added to your vocabulary ·{' '}
+              <a href="/catalog" className="text-gold-300 underline underline-offset-2">see Words</a>
+            </div>
+          )}
+          {saved.grammarSlug && (
+            <div className="mt-1">
+              New grammar card: <b>{saved.grammarTitle}</b> ·{' '}
+              <a href={`/grammar?open=${saved.grammarSlug}`} className="text-gold-300 underline underline-offset-2">
+                open it in Grammar
+              </a>
+            </div>
+          )}
+          <div className="mt-2 text-xs text-stone-200/60">Ready for the next page.</div>
+        </div>
       )}
     </div>
   );
