@@ -30,6 +30,8 @@ export type Conjugation = {
   future: string[] | null;
   imperative: string[] | null; // to a man, to a woman, to a group
   presentSuggested: boolean;
+  /** e.g. "Your notebook has أزور ("I" form); the table is for زار." */
+  note?: string;
   /** ★ people for this case: indexes into PERSONS */
   starPast: number[];
   starPresent: number[];
@@ -53,6 +55,18 @@ function presentStem(present: string, past: string): string {
   return s;
 }
 
+/**
+ * After a prefix, the stem's first letter loses its vowel: مَنِع → بمنِع، إمنِع (not بمَنِع).
+ * Kept when the 2nd letter is long (قارن، سافر) or doubled (قرّر، دوّر), where the vowel is real.
+ */
+function tidyStem(st: string): string {
+  const m = st.match(/^([^\u064B-\u0652])([\u064E\u064F\u0650])([^\u064B-\u0652])([\u064B-\u0652]*)/);
+  if (!m) return st;
+  const [, , , second, marks] = m;
+  if (/[اوي]/.test(second) || marks.includes('\u0651')) return st;
+  return st[0] + st.slice(2);
+}
+
 const IRREGULAR_TABLES: Record<string, Partial<Conjugation>> = {
   اجى: {
     past: ['أجيت', 'أجيت', 'أجيتي', 'أجى', 'إجت', 'أجينا', 'أجيتو', 'إجو'],
@@ -71,8 +85,9 @@ export function conjugate(arabic: string, english: string, notes?: string | null
   const info = verbInfo(arabic, english, notes);
   if (!info) return null;
   const forms = parseForms(arabic, english);
-  // first alternative, first word; anything after it (عَلَى، بال) is carried along
-  const [pastWord, ...pastTail] = forms.main.split(/\s*\/\s*/)[0].trim().split(/\s+/);
+  // first alternative, first word; anything after it (عَلَى، بال) is carried along.
+  // info.past is set when the notebook wrote a conjugated form (أزور → زار).
+  const [pastWord, ...pastTail] = (info.past || forms.main).split(/\s*\/\s*/)[0].trim().split(/\s+/);
   const tail = pastTail.length ? ' ' + pastTail.join(' ') : '';
   const presentWord = info.present ? info.present.split(/\s*\/\s*/)[0].trim().split(/\s+/)[0] : null;
   const c = info.verbCase;
@@ -93,6 +108,7 @@ export function conjugate(arabic: string, english: string, notes?: string | null
     future: null,
     imperative: null,
     presentSuggested: info.presentSuggested,
+    note: info.note,
     ...star,
   };
 
@@ -110,8 +126,9 @@ export function conjugate(arabic: string, english: string, notes?: string | null
   if (c === 'sc3') {
     suffixed = P;
     joint = 'ي';
-  } else if (c === 'sc4' || (c === 'keeps-a' && /ى$/.test(pl))) {
-    suffixed = P.replace(/[ىا][ً-ْ]*$/, '');
+  } else if (c === 'sc4' || (c === 'keeps-a' && /[ىاأ]$/.test(pl))) {
+    // حكى → حكيت، حكت · قرا / قرأ → قريت، قرت
+    suffixed = P.replace(/[ىاأ][ً-ْ]*$/, '');
     vowelStem = suffixed;
     joint = 'ي';
   } else if (c === 'keeps-a') {
@@ -143,11 +160,13 @@ export function conjugate(arabic: string, english: string, notes?: string | null
   // ---------------- present & future ----------------
   if (presentWord) {
     const stem = presentStem(presentWord, pastWord);
-    const st = dropFinalVowel(stem);
-    const endsInY = /[يى]$/.test(noVowels(st));
+    const st = tidyStem(dropFinalVowel(stem));
+    // the final ي / ى (or ا in بقرا) drops before the ي / و endings of إنتي، إنتو، همّا
+    const endsInY = c === 'sc4' || c === 'keeps-a' ? /[يىا]$/.test(noVowels(st)) : /[يى]$/.test(noVowels(st));
     // stem used before ي / و endings
     const before = endsInY ? noVowels(st).slice(0, -1) : noVowels(st);
-    const startsWithAlif = /^[اأآ]/.test(noVowels(st));
+    // ياكل → اكل (an alif that merges with the prefix), but أكّد keeps its hamza (بأكّد)
+    const startsWithAlif = /^[اأآ]/.test(noVowels(st)) && !/^[اأآ][ً-ِْ]*.[ً-ِْ]*ّ/.test(st);
     const pre = { ana: 'ب', t: 'بت', y: 'بي', n: 'من' };
     const anaForm = startsWithAlif ? 'ب' + st.replace(/^[أآ]/, 'ا') : pre.ana + st;
     base.present = [
@@ -180,7 +199,7 @@ export function conjugate(arabic: string, english: string, notes?: string | null
       const coreLen = letters(pastWord).length;
       const needsAlif =
         pastStartsWithAlif || // إشتغل، إستنّى → إشتغل، إستنّى
-        ((c === 'regular' || c === 'sc4' || c === 'keeps-a') && coreLen === 3 && !pastWord.includes('ّ'));
+        ((c === 'regular' || c === 'sc4' || c === 'keeps-a') && coreLen === 3 && !pastWord.includes('ّ') && !st.includes('ّ'));
       const imp = (needsAlif && !startsWithAlif ? 'إ' : '') + st;
       const impBefore = (needsAlif && !startsWithAlif ? 'إ' : '') + before;
       if (c === 'sc4') base.imperative = [imp, imp, impBefore + 'و'];

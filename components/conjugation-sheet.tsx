@@ -120,6 +120,7 @@ export function ConjugationSheet({
           <div className="p-6 text-stone-200/70">This word isn't a verb I can conjugate.</div>
         ) : (
           <div className="px-4 pb-10 pt-3">
+            {c.note && <p className="text-xs text-amber-200/90 mb-2">ⓘ {c.note}</p>}
             {c.presentSuggested && (
               <p className="text-xs text-sky-300/80 mb-3">
                 ✦ Your notebook only has the past form. The present (and everything built on it) is suggested by

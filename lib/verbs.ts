@@ -46,9 +46,9 @@ export function letters(s: string) {
 }
 
 // Things whose English starts with "to" but aren't verbs
-const NOT_VERBS = new Set(['ل / ل', 'ل', 'ال', 'الِ', 'على', 'على قلبك', 'على قلبكم', 'مطرود']);
+const NOT_VERBS = new Set(['ل / ل', 'ل', 'ال', 'الِ', 'على', 'على قلبك', 'على قلبكم', 'مطرود', 'بد']);
 
-const KEEPS_A = new Set(['استنى', 'اتمنى', 'اتغدى', 'اتعشى', 'نسي', 'صحي']);
+const KEEPS_A = new Set(['استنى', 'اتمنى', 'اتغدى', 'اتعشى', 'نسي', 'صحي', 'قرا', 'قرأ']);
 const IRREGULAR = new Set(['اجى', 'اجا', 'اكل', 'اخد', 'اخذ']);
 
 // Verb lists from the notebook pages
@@ -62,7 +62,11 @@ export function classifyVerb(mainForm: string, present?: string | null): VerbCas
   if (KEEPS_A.has(l)) return 'keeps-a';
   if (/أ$/.test(l)) return 'regular'; // قرأ، بدأ
   if (l.length === 2) return 'sc3'; // "فعل مع حرفين" — shadda not always written (فك)
-  if (l.length >= 3 && (l.endsWith('ى') || (l.length === 3 && l.endsWith('ا') && l[1] !== 'ا'))) return 'sc4';
+  if (l.length >= 3 && (l.endsWith('ى') || (l.length === 3 && l.endsWith('ا') && l[1] !== 'ا'))) {
+    // present ending in ى / ا (بتلاقى، بقرا) = the إستنّى family; present ending in ي (بحكي) = S.C.4
+    const p = present ? letters(present.split(/\s*\/\s*/)[0]) : '';
+    return /[ىا]$/.test(p) ? 'keeps-a' : 'sc4';
+  }
   if (l.length === 3 && l[1] === 'ا') {
     // 3 letters with ا in the middle: S.C.2 (و in the present) or S.C.5 (ي in the present)
     if (SC5.has(l)) return 'sc5';
@@ -102,6 +106,7 @@ export const SUGGESTED_PRESENT: Record<string, string> = {
   سكن: 'يُسكُن',
   لعب: 'يِلعَب',
   قرأ: 'يِقرَا',
+  قرا: 'يِقرَا',
   ركب: 'يِركَب',
   وقّف: 'يوَقِّف',
   نجح: 'يِنجَح',
@@ -222,6 +227,10 @@ export type VerbInfo = {
   /** present form: from the notebook if written there, else suggested */
   present: string | null;
   presentSuggested: boolean;
+  /** the dictionary (past "he") form the table is built from, when the word itself isn't it */
+  past?: string;
+  /** why: e.g. the notebook wrote the "I" form */
+  note?: string;
 };
 
 /** Present form saved by a scan in the notes field, e.g. "present (suggested): يِكتِب" */
@@ -230,18 +239,57 @@ function presentFromNotes(notes?: string | null) {
   return m ? m[1].trim() : null;
 }
 
+const PRONOUN_START = /^\s*(i|you|he|she|we|they|it)\b/i;
+
+function infoFor(past: string, english: string, notes?: string | null, extra: Partial<VerbInfo> = {}): VerbInfo {
+  const key = verbKey(past);
+  const suggested = SUGGESTED_PRESENT[key] || presentFromNotes(notes);
+  return {
+    verbCase: classifyVerb(past, suggested),
+    present: suggested || null,
+    presentSuggested: !!suggested,
+    ...extra,
+  };
+}
+
 export function verbInfo(arabic: string, english: string, notes?: string | null): VerbInfo | null {
   if (!arabic || !english) return null;
   if (/\+|\[structure/.test(arabic + english)) return null;
+
+  // "they live (from سَكَن, to live)" — a conjugated example; build the table from the verb it names
+  const from = english.match(/from\s+([\u0600-\u06FF\u064B-\u0652\u0670]+)/);
+  if (from) {
+    return infoFor(from[1], english, notes, { past: from[1], note: `Your notebook has the form ${arabic.trim()}; the table is for the verb ${from[1]}.` });
+  }
+  // "I sleep", "they work" with no dictionary form given: not something to conjugate
+  if (PRONOUN_START.test(english)) {
+    const hollow = hollowFromFirstPerson(arabic);
+    if (hollow) return infoFor(hollow, english, notes, { past: hollow, note: `Your notebook has ${arabic.trim()} ("I" form); the table is for ${hollow}.` });
+    return null;
+  }
   if (kindFromEnglish(english) !== 'present') return null;
   const f = parseForms(arabic, english);
   if (f.second && f.kind === 'plural') return null; // it's a noun pair after all
   if (NOT_VERBS.has(letters(f.main))) return null;
+
+  // أنام، أزور، أجيب written as the verb: that's the present "I" form of a hollow verb
+  const hollow = !f.second && hollowFromFirstPerson(f.main);
+  if (hollow) {
+    return infoFor(hollow, english, notes, { past: hollow, note: `Your notebook has ${f.main} ("I" form); the table is for ${hollow}.` });
+  }
+
   if (f.second && (f.kind === 'present' || f.kind === 'imperative')) {
     const present = f.kind === 'present' ? f.second : null;
     return { verbCase: classifyVerb(f.main, present), present, presentSuggested: false };
   }
-  const key = verbKey(f.main.split(/\s*\/\s*/)[0]);
-  const suggested = SUGGESTED_PRESENT[key] || presentFromNotes(notes);
-  return { verbCase: classifyVerb(f.main, suggested), present: suggested || null, presentSuggested: !!suggested };
+  return infoFor(f.main.split(/\s*\/\s*/)[0], english, notes);
+}
+
+/** أزور → زار, أنام → نام, أجيب → جاب (present "I" form of a 3-letter verb with a long middle vowel) */
+function hollowFromFirstPerson(word: string): string | null {
+  const w = word.split(/\s*\/\s*/)[0].trim();
+  if (!/^[أا]/.test(w.replace(/[\u064B-\u0652]/g, ''))) return null;
+  const l = letters(w);
+  if (l.length !== 4 || !/^ا.[ويا].$/.test(l)) return null;
+  return l[1] + 'ا' + l[3];
 }
