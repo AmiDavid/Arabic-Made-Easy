@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 import { parseForms, FORM_LABEL } from '@/lib/forms';
 import { verbInfo, VERB_CASES } from '@/lib/verbs';
@@ -100,6 +101,7 @@ export function VerbCaseBadge({ verbCase }: { verbCase: keyof typeof VERB_CASES 
   return (
     <Link
       href={`/grammar?open=${c.slug}`}
+      onClick={(e) => e.stopPropagation()}
       title={`${c.long}: open the grammar card`}
       className={cn(
         'shrink-0 text-[10px] font-semibold rounded-full px-2 py-0.5 border',

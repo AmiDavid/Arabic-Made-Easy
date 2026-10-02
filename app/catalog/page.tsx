@@ -2,6 +2,8 @@
 import { WordWithForms } from '@/components/word-forms';
 import { parseForms } from '@/lib/forms';
 import { verbInfo, VERB_CASES, type VerbCase } from '@/lib/verbs';
+import { ConjugationSheet } from '@/components/conjugation-sheet';
+import { ChevronLeft } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Search, RefreshCw } from 'lucide-react';
@@ -49,6 +51,7 @@ export default function CatalogPage() {
   const [topicId, setTopicId] = useState<string>('all');
   // word type: all words, all verbs, or one verb case
   const [wordType, setWordType] = useState<'all' | 'verbs' | VerbCase>('all');
+  const [conjFor, setConjFor] = useState<Entry | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const lastLoad = useRef(0);
@@ -200,22 +203,43 @@ export default function CatalogPage() {
           key={`${topicId}|${q}|${wordType}`}
           className="divide-y hairline border hairline rounded-2xl overflow-hidden bg-night-800/60"
         >
-          {shown.map((e) => (
-            <li key={e.id} className="p-3 flex items-start gap-4">
-              <WordWithForms arabic={e.arabic} english={e.english} notes={e.notes} showVerbCase className="flex-1" />
-              <div className="flex-1 text-sm">
-                <div>{e.english.replace('[?]', '')}</div>
-                <div className="text-[11px] text-stone-200/50 mt-0.5">{e.page_label || '—'}</div>
-              </div>
-              {e.uncertain && <span className="text-[11px] text-amber-400" title="Uncertain reading">?</span>}
-            </li>
-          ))}
+          {shown.map((e) => {
+              const isVerb = !!verbInfo(e.arabic, e.english, e.notes);
+              return (
+                <li
+                  key={e.id}
+                  onClick={isVerb ? () => setConjFor(e) : undefined}
+                  className={cn('p-3 flex items-start gap-4', isVerb && 'cursor-pointer hover:bg-white/[0.03] active:bg-white/[0.05]')}
+                >
+                  <WordWithForms arabic={e.arabic} english={e.english} notes={e.notes} showVerbCase className="flex-1" />
+                  <div className="flex-1 text-sm">
+                    <div>{e.english.replace('[?]', '')}</div>
+                    <div className="text-[11px] text-stone-200/50 mt-0.5">{e.page_label || '—'}</div>
+                    {isVerb && (
+                      <div className="text-[11px] text-gold-300/80 mt-1 flex items-center gap-0.5">
+                        conjugate <ChevronLeft className="w-3 h-3 rotate-180" />
+                      </div>
+                    )}
+                  </div>
+                  {e.uncertain && <span className="text-[11px] text-amber-400" title="Uncertain reading">?</span>}
+                </li>
+              );
+            }
+          )}
         </ul>
       )}
       {matching.length > PAGE_LIMIT && (
         <div className="text-xs text-stone-200/60 text-center mt-3">
           Showing the first {PAGE_LIMIT} of {matching.length.toLocaleString()} — search or pick a topic to narrow it down.
         </div>
+      )}
+      {conjFor && (
+        <ConjugationSheet
+          arabic={conjFor.arabic}
+          english={conjFor.english}
+          notes={conjFor.notes}
+          onClose={() => setConjFor(null)}
+        />
       )}
     </div>
   );
