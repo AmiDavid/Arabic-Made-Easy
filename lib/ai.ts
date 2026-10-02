@@ -15,8 +15,9 @@ export type ChatTurn = { role: 'user' | 'assistant'; content: string };
 type Tier = 'fast' | 'smart';
 
 export const ANTHROPIC_MODELS: Record<Tier, string[]> = {
-  fast: ['claude-haiku-4-5', 'claude-haiku-4-5-20251001', 'claude-3-5-haiku-latest'],
-  smart: ['claude-sonnet-5-5', 'claude-sonnet-4-5', 'claude-sonnet-4-20250514'],
+  // current models only — retired ids (claude-3-5-haiku-latest, claude-sonnet-4-20250514) removed
+  fast: ['claude-haiku-4-5', 'claude-haiku-4-5-20251001'],
+  smart: ['claude-sonnet-5-5', 'claude-sonnet-4-5'],
 };
 const OPENAI_MODELS: Record<Tier, string> = {
   fast: 'gpt-4o-mini',
