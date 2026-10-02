@@ -4,17 +4,29 @@ import { supabase } from '@/lib/supabase';
 import { ChevronDown, ChevronRight, ImageIcon, RefreshCw } from 'lucide-react';
 import type { GrammarRule } from '@/types';
 import { cn } from '@/lib/utils';
+import { GRAMMAR } from '@/lib/grammar-content';
+import { notebookPageImage } from '@/lib/notebook-images';
+
+// Rules written in the app's code are always the newest version, so they replace
+// any older copy saved in the database. Rules added by scanning stay as they are.
+function mergeRules(dbRules: GrammarRule[]): GrammarRule[] {
+  const codeSlugs = new Set(GRAMMAR.map((g) => g.slug));
+  const dbIds = new Map(dbRules.map((r) => [r.slug, r.id]));
+  const fromCode: GrammarRule[] = GRAMMAR.map((g) => ({ ...g, id: dbIds.get(g.slug) || g.slug }));
+  const scanned = dbRules.filter((r) => !codeSlugs.has(r.slug));
+  return [...fromCode, ...scanned].sort((a, b) => a.sort_order - b.sort_order);
+}
 
 export default function GrammarPage() {
-  const [rules, setRules] = useState<GrammarRule[]>([]);
+  const [rules, setRules] = useState<GrammarRule[]>(() => mergeRules([]));
   const [open, setOpen] = useState<string | null>(null);
-  const [viewPage, setViewPage] = useState<number | null>(null);
+  const [viewPage, setViewPage] = useState<{ page: number; scanned: boolean } | null>(null);
   const [pageMap, setPageMap] = useState<Record<number, string>>({});
   const [reseeding, setReseeding] = useState(false);
 
   async function loadRules() {
     const { data } = await supabase.from('grammar_rules').select('*').order('sort_order');
-    setRules((data as GrammarRule[]) || []);
+    setRules(mergeRules((data as GrammarRule[]) || []));
     const { data: pages } = await supabase.from('notebook_pages').select('page, image_path');
     const m: Record<number, string> = {};
     for (const p of pages || []) m[p.page] = p.image_path;
@@ -39,6 +51,10 @@ export default function GrammarPage() {
     } finally {
       setReseeding(false);
     }
+  }
+
+  function imageFor(v: { page: number; scanned: boolean }) {
+    return v.scanned ? pageMap[v.page] || null : notebookPageImage(v.page) || pageMap[v.page] || null;
   }
 
   const byCategory = rules.reduce<Record<string, GrammarRule[]>>((acc, r) => {
@@ -102,7 +118,7 @@ export default function GrammarPage() {
                         {r.source_pages.map((p) => (
                           <button
                             key={p}
-                            onClick={() => setViewPage(p)}
+                            onClick={() => setViewPage({ page: p, scanned: r.slug.startsWith('scan-') })}
                             className="text-xs bg-white/5 hover:bg-white/10 border hairline rounded-full px-3 py-1 flex items-center gap-1"
                           >
                             <ImageIcon className="w-3 h-3" /> p.{p}
@@ -124,8 +140,8 @@ export default function GrammarPage() {
           onClick={() => setViewPage(null)}
         >
           <div className="max-w-full max-h-full">
-            {pageMap[viewPage] ? (
-              <img src={pageMap[viewPage]} alt={`Page ${viewPage}`} className="max-h-[85vh] rounded-lg" />
+            {imageFor(viewPage) ? (
+              <img src={imageFor(viewPage)!} alt={`Notebook page ${viewPage.page}`} className="max-h-[85vh] max-w-full rounded-lg" />
             ) : (
               <div className="text-gray-400">Page image not found.</div>
             )}
@@ -144,6 +160,7 @@ export default function GrammarPage() {
         .grammar-body table { width: 100%; border-collapse: collapse; margin: 0.8em 0; font-size: 0.9em; }
         .grammar-body th { text-align: left; padding: 6px 10px; background: rgba(124,58,237,0.1); border: 1px solid rgba(255,255,255,0.08); font-weight: 600; color: #c4b5fd; }
         .grammar-body td { padding: 6px 10px; border: 1px solid rgba(255,255,255,0.06); vertical-align: top; }
+        .grammar-body bdi.ar { font-size: 1.12em; }
         .grammar-body code { background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
       `}</style>
     </div>
@@ -194,6 +211,13 @@ function renderMd(md: string): string {
     if (/^<(h\d|table|ul|ol|p|div)/.test(trimmed)) return trimmed;
     return `<p>${trimmed.replace(/\n/g, '<br/>')}</p>`;
   }).join('\n');
+
+  // Isolate each run of Arabic so mixed lines ("ى → ي", "حكى → حكيت") read
+  // left-to-right in the English sentence instead of being flipped by the browser.
+  html = html.replace(
+    /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]+(?:[ ،][؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]+)*/g,
+    (m) => `<bdi class="ar">${m}</bdi>`
+  );
 
   return html;
 }

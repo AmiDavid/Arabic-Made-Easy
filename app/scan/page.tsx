@@ -17,7 +17,7 @@ type ScanResponse = {
   page_type: 'vocab' | 'grammar' | 'mixed';
   title?: string;
   suggested_topic_slug: string;
-  grammar?: { title?: string; summary?: string; content?: string };
+  grammar?: { title?: string; summary?: string; content?: string; examples?: { ar: string; en: string }[] };
   entries: Extracted[];
 };
 
@@ -109,7 +109,7 @@ export default function ScanPage() {
         category: scanResult?.suggested_topic_slug || 'misc',
         summary: grammar.summary || '',
         content_md: grammar.content || '',
-        examples: [],
+        examples: Array.isArray(grammar.examples) ? grammar.examples.filter((x) => x?.ar && x?.en) : [],
         source_pages: [nextPage],
         sort_order: 999,
       }, { onConflict: 'slug' });
