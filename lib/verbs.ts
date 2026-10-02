@@ -1,9 +1,11 @@
 /**
  * Sorts every verb into its case from the notebook (Basil Zboun's method):
+ *   S.C.1  starts with ا, more than 3 letters  إشتغل، إستخدم (present drops the ا)
+ *   S.C.2  ا in the middle, و in the present   راح، قال، شاف، خاف (past: رُحت)
  *   S.C.3  two letters with a shadda           حبّ، حطّ
  *   S.C.4  ends in ى                           حكى، مشى، إشترى
  *   ى-keepers  present ends in ى (p.13–16)     إستنّى، نسي، صحي
- *   S.C.5  ا in the middle                     باع، جاب، نام
+ *   S.C.5  ا in the middle, ي in the present   باع، جاب، نام (past: بِعت)
  *   irregular                                  أجى، أكل، أخد
  *   regular                                    everything else
  * and supplies the present form for verbs the notebook lists with one form only.
@@ -12,10 +14,12 @@
  */
 import { parseForms, kindFromEnglish } from './forms';
 
-export type VerbCase = 'regular' | 'sc3' | 'sc4' | 'keeps-a' | 'sc5' | 'irregular';
+export type VerbCase = 'regular' | 'sc1' | 'sc2' | 'sc3' | 'sc4' | 'keeps-a' | 'sc5' | 'irregular';
 
 export const VERB_CASES: Record<VerbCase, { label: string; long: string; slug: string }> = {
   regular: { label: 'Regular', long: 'Regular verb', slug: 'verbs-how-to-conjugate' },
+  sc1: { label: 'S.C.1', long: 'S.C.1: starts with ا, more than 3 letters', slug: 'sc1-verbs-starting-with-alif' },
+  sc2: { label: 'S.C.2', long: 'S.C.2: ا in the middle, و in the present', slug: 'sc2-hollow-waw-verbs' },
   sc3: { label: 'S.C.3', long: 'S.C.3: two-letter verb', slug: 'sc3-two-letter-verbs' },
   sc4: { label: 'S.C.4', long: 'S.C.4: ends in ى', slug: 'sc4-alif-maqsura-verbs' },
   'keeps-a': { label: 'S.C.4 (ى)', long: 'Keeps ى in the present (like إستنّى)', slug: 'verbs-ending-a-istanna-family' },
@@ -47,17 +51,26 @@ const NOT_VERBS = new Set(['ل / ل', 'ل', 'ال', 'الِ', 'على', 'على 
 const KEEPS_A = new Set(['استنى', 'اتمنى', 'اتغدى', 'اتعشى', 'نسي', 'صحي']);
 const IRREGULAR = new Set(['اجى', 'اجا', 'اكل', 'اخد', 'اخذ']);
 
-export function classifyVerb(mainForm: string): VerbCase {
+// Verb lists from the notebook pages
+const SC2 = new Set(['راح', 'كان', 'شاف', 'فات', 'قال', 'مات', 'زار', 'باس', 'قام', 'صام', 'ساق', 'فاز', 'ذاق', 'قاد', 'خاف', 'غاص', 'لام']); // p.82
+const SC5 = new Set(['باع', 'صار', 'شال', 'جاب', 'ضاف', 'طار', 'عاش', 'صاد', 'دار', 'قاس', 'صاب', 'حاب', 'طاب', 'زاد', 'ضاع', 'عاد', 'نام']); // p.11
+
+export function classifyVerb(mainForm: string, present?: string | null): VerbCase {
   const word = mainForm.split(/\s*\/\s*/)[0].trim().split(/\s+/)[0]; // first verb, first word
   const l = letters(word);
   if (IRREGULAR.has(l)) return 'irregular';
   if (KEEPS_A.has(l)) return 'keeps-a';
   if (/أ$/.test(l)) return 'regular'; // قرأ، بدأ
-    if (l.length === 2) return 'sc3'; // "فعل مع حرفين" — shadda not always written (فك)
+  if (l.length === 2) return 'sc3'; // "فعل مع حرفين" — shadda not always written (فك)
   if (l.length >= 3 && (l.endsWith('ى') || (l.length === 3 && l.endsWith('ا') && l[1] !== 'ا'))) return 'sc4';
-  if (l.length === 3 && l[1] === 'ا') return 'sc5';
-  // إرتاح، إحتاج، إشتاق: ا before the last letter → past like S.C.5 (إحتجت), present keeps ا like نام
-  if (l.length >= 5 && l.startsWith('ا') && l[l.length - 2] === 'ا' && !l.startsWith('است')) return 'sc5';
+  if (l.length === 3 && l[1] === 'ا') {
+    // 3 letters with ا in the middle: S.C.2 (و in the present) or S.C.5 (ي in the present)
+    if (SC5.has(l)) return 'sc5';
+    if (SC2.has(l)) return 'sc2';
+    const p = present ? letters(present) : '';
+    return /ي.$/.test(p) && !/و/.test(p) ? 'sc5' : 'sc2';
+  }
+  if (l.startsWith('ا') && l.length > 3) return 'sc1'; // إشتغل، إستخدم، إحتاج
   return 'regular';
 }
 
@@ -128,6 +141,22 @@ export const SUGGESTED_PRESENT: Record<string, string> = {
   احتاج: 'يِحتاج',
   اشتاق: 'يِشتاق',
   احتفل: 'يِحتِفِل',
+  // S.C.2 (p.82): ا → و in the present (خاف keeps ا)
+  راح: 'يرُوح',
+  كان: 'يكُون',
+  شاف: 'يشُوف',
+  فات: 'يفُوت',
+  قال: 'يقُول',
+  مات: 'يمُوت',
+  زار: 'يزُور',
+  باس: 'يبُوس',
+  قام: 'يقُوم',
+  صام: 'يصُوم',
+  ساق: 'يسُوق',
+  ذاق: 'يذُوق',
+  قاد: 'يقُود',
+  خاف: 'يخاف',
+  غاص: 'يغُوص',
   // irregular
   اكل: 'ياكُل',
   اخد: 'ياخُد',
@@ -208,11 +237,11 @@ export function verbInfo(arabic: string, english: string, notes?: string | null)
   const f = parseForms(arabic, english);
   if (f.second && f.kind === 'plural') return null; // it's a noun pair after all
   if (NOT_VERBS.has(letters(f.main))) return null;
-  const verbCase = classifyVerb(f.main);
   if (f.second && (f.kind === 'present' || f.kind === 'imperative')) {
-    return { verbCase, present: f.kind === 'present' ? f.second : null, presentSuggested: false };
+    const present = f.kind === 'present' ? f.second : null;
+    return { verbCase: classifyVerb(f.main, present), present, presentSuggested: false };
   }
   const key = verbKey(f.main.split(/\s*\/\s*/)[0]);
   const suggested = SUGGESTED_PRESENT[key] || presentFromNotes(notes);
-  return { verbCase, present: suggested || null, presentSuggested: !!suggested };
+  return { verbCase: classifyVerb(f.main, suggested), present: suggested || null, presentSuggested: !!suggested };
 }

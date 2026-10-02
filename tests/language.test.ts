@@ -40,11 +40,12 @@ test('present in brackets', () => {
 test('verb cases follow the notebook', () => {
   const cases: [string, string][] = [
     ['حَبّ', 'sc3'], ['فَك', 'sc3'], ['حَكَى', 'sc4'], ['شَكَا', 'sc4'], ['إِشتَرَى', 'sc4'],
-    ['بَاع', 'sc5'], ['نَام', 'sc5'], ['إِحتَاج', 'sc5'], ['اِستَنَّى', 'keeps-a'], ['نِسِي', 'keeps-a'],
+    ['بَاع', 'sc5'], ['نَام', 'sc5'], ['جَاب', 'sc5'], ['اِستَنَّى', 'keeps-a'], ['نِسِي', 'keeps-a'],
     ['أَجَى', 'irregular'], ['أَكَل', 'irregular'], ['كَتَب', 'regular'], ['سَأَل', 'regular'], ['قَرَأ', 'regular'],
-    ['جَاوَب', 'regular'], ['إِستَخدَم', 'regular'],
+    ['جَاوَب', 'regular'], ['إِستَخدَم', 'sc1'], ['إِشتَغَل', 'sc1'], ['إِحتَاج', 'sc1'], ['أَرسَل', 'sc1'],
+    ['رَاح', 'sc2'], ['قَال', 'sc2'], ['خَاف', 'sc2'], ['لَام', 'sc2'],
   ];
-  for (const [verb, expected] of cases) assert.equal(classifyVerb(verb), expected, verb);
+  for (const [verb, expected] of cases) assert.equal(verbInfo(verb, 'to x')?.verbCase ?? classifyVerb(verb), expected, verb);
 });
 
 test('non-verbs are not treated as verbs', () => {

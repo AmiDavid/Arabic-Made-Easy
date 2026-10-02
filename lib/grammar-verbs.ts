@@ -466,6 +466,100 @@ const AJA: Verb = {
 تعالو|taʕālu`),
 };
 
+const ISHTAGHAL: Verb = {
+  past: f(`إشتغلت|ishtaghalt
+إشتغلت|ishtaghalt
+إشتغلتي|ishtaghalti
+إشتغل|ishtaghal
+إشتغلت|ishtaghlat
+إشتغلنا|ishtaghalna
+إشتغلتو|ishtaghaltu
+إشتغلو|ishtaghlu`),
+  pres: f(`بشتغل|bashtaghil
+بتشتغل|btishtaghil
+بتشتغلي|btishtaghli
+بيشتغل|bishtaghil
+بتشتغل|btishtaghil
+منشتغل|mnishtaghil
+بتشتغلو|btishtaghlu
+بيشتغلو|bishtaghlu`),
+  fut: f(`رح أشتغل|raḥ ashtaghil
+رح تشتغل|raḥ tishtaghil
+رح تشتغلي|raḥ tishtaghli
+رح يشتغل|raḥ yishtaghil
+رح تشتغل|raḥ tishtaghil
+رح نشتغل|raḥ nishtaghil
+رح تشتغلو|raḥ tishtaghlu
+رح يشتغلو|raḥ yishtaghlu`),
+  imp: f(`إشتغل|ishtaghil
+إشتغلي|ishtaghli
+إشتغلو|ishtaghlu`),
+  starPast: [],
+  starPres: [],
+};
+
+const RAAH: Verb = {
+  past: f(`رُحت|ruḥt
+رُحت|ruḥt
+رُحتي|ruḥti
+راح|rāḥ
+راحت|rāḥat
+رُحنا|ruḥna
+رُحتو|ruḥtu
+راحو|rāḥu`),
+  pres: f(`بروح|barūḥ
+بتروح|btirūḥ
+بتروحي|btirūḥi
+بيروح|birūḥ
+بتروح|btirūḥ
+منروح|mnirūḥ
+بتروحو|btirūḥu
+بيروحو|birūḥu`),
+  fut: f(`رح أروح|raḥ arūḥ
+رح تروح|raḥ trūḥ
+رح تروحي|raḥ trūḥi
+رح يروح|raḥ yrūḥ
+رح تروح|raḥ trūḥ
+رح نروح|raḥ nrūḥ
+رح تروحو|raḥ trūḥu
+رح يروحو|raḥ yrūḥu`),
+  imp: f(`روح|rūḥ
+روحي|rūḥi
+روحو|rūḥu`),
+  starPres: [],
+};
+
+const KHAAF: Verb = {
+  past: f(`خُفت|khuft
+خُفت|khuft
+خُفتي|khufti
+خاف|khāf
+خافت|khāfat
+خُفنا|khufna
+خُفتو|khuftu
+خافو|khāfu`),
+  pres: f(`بخاف|bakhāf
+بتخاف|btikhāf
+بتخافي|btikhāfi
+بيخاف|bikhāf
+بتخاف|btikhāf
+منخاف|mnikhāf
+بتخافو|btikhāfu
+بيخافو|bikhāfu`),
+  fut: f(`رح أخاف|raḥ akhāf
+رح تخاف|raḥ tkhāf
+رح تخافي|raḥ tkhāfi
+رح يخاف|raḥ ykhāf
+رح تخاف|raḥ tkhāf
+رح نخاف|raḥ nkhāf
+رح تخافو|raḥ tkhāfu
+رح يخافو|raḥ ykhāfu`),
+  imp: f(`خاف|khāf
+خافي|khāfi
+خافو|khāfu`),
+  starPres: [],
+};
+
 const BAA: Verb = {
   past: f(`بِعت|biʕt
 بِعت|biʕt
@@ -575,6 +669,9 @@ export const VERB_TABLES: Record<string, { english: string; table: Verb }> = {
   'صِحِي': { english: 'to wake up', table: SIHI },
   'أَجَى': { english: 'to come', table: AJA },
   'بَاع': { english: 'to sell', table: BAA },
+  'إِشتَغَل': { english: 'to work', table: ISHTAGHAL },
+  'رَاح': { english: 'to go', table: RAAH },
+  'خَاف': { english: 'to be afraid', table: KHAAF },
   'جَاب': { english: 'to bring', table: JAB },
   'نَام': { english: 'to sleep', table: NAM },
 };
@@ -653,9 +750,11 @@ In every special case below, the change in the rule happens for everyone **excep
 | The verb looks like… | Example | Case |
 |---|---|---|
 | 3 normal letters | شرب، فتح، درس | regular (this page) |
+| starts with ا, more than 3 letters | إشتغل، إستخدم، إتّصل | **S.C.1** |
+| ا in the middle, و in the present | راح → بروح، قال، شاف، خاف | **S.C.2** |
 | 2 letters with a shadda ّ | حبّ، حطّ، ردّ | **S.C.3** |
 | ends in ى | حكى، مشى، إشترى | **S.C.4** |
-| ا in the middle | باع، جاب، صار | **S.C.5** |
+| ا in the middle, ي in the present | باع → ببيع، جاب، صار | **S.C.5** |
 
 ## Saying "not"
 
@@ -673,6 +772,139 @@ ${PRONUNCIATION_KEY}`,
     ],
     source_pages: [7, 9, 11],
     sort_order: 35,
+  },
+
+  // ------------------------------------------------------------ S.C.1 (p.78, 81)
+  {
+    slug: 'sc1-verbs-starting-with-alif',
+    title: 'S.C.1 — Verbs that start with ا (إشتغل، إستخدم، إتّصل)',
+    category: 'verbs',
+    summary:
+      'Starts with ا and has more than 3 letters. Past: regular (keep the ا). Present & future: drop the ا, then pre + suf.',
+    content_md: `## شو يعني S.C.1؟ — what is it?
+
+A verb that **starts with ا and has more than 3 letters**: إشتغل (to work), إستخدم (to use), إتّصل (to call), إستلم (to receive), أرسل (to send), إحتاج (to need), إشتاق (to miss), إحتفل (to celebrate), إرتاح (to relax).
+
+## كيف بنشتغل مع S.C.1؟ — how to conjugate
+
+**① Past (الماضي)**
+
+- **عادي**, regular. Keep the whole verb, ا included, and add the suffix: إشتغلت، إشتغلنا، إشتغلو.
+
+**② Present & future (المضارع والمستقبل)**
+
+- a. **✗ drop the ا**: إشتغل → شتغل
+- b. **+ pre & suf**: بشتغل (bashtaghil), بتشتغلي, بيشتغلو. Future: رح أشتغل.
+
+**Imperative:** keeps the ا, like the past: **إشتغل / إشتغلي / إشتغلو**. This is the imperative's special case 1.
+
+## مُلخّص — summary
+
+- **Past:** verb (with ا) + suf → إشتغلت
+- **Present / future:** pre + verb without ا + suf → بشتغل، بتشتغلو
+
+## Full table — إشتغل (to work)
+
+${table(ISHTAGHAL)}
+
+## The S.C.1 verbs in the notebook (p.78)
+
+| Past | Present stem (no ا) | Meaning |
+|---|---|---|
+| إشتغل ishtaghal | شتغل → بشتغل | to work |
+| إتّصل ittaṣal | تّصل → بتّصل | to call (إتّصل على / في) |
+| أرسل arsal | رسل → برسل | to send (+ لـ for the person) |
+| إستلم istalam | ستلم → بستلم | to receive |
+| إستخدم istakhdam | ستخدم → بستخدم | to use |
+| إحتاج iḥtāj | حتاج → بحتاج | to need |
+| إشتاق ishtāʔ | شتاق → بشتاق | to miss someone (إشتاق لـ) |
+| إحتفل iḥtafal | حتفل → بحتفل | to celebrate |
+| إرتاح irtāḥ | رتاح → برتاح | to relax / rest |
+
+⚠ إحتاج, إشتاق and إرتاح have ا before the last letter as well. In the past it drops before a consonant ending: **إحتجت** (iḥtajt), **إشتقت** (ishtaʔt), **إرتحت** (irtaḥt). For هيّا & همّا it stays: إحتاجت، إحتاجو.
+
+${PRONUNCIATION_KEY}`,
+    examples: [
+      { ar: 'بشتغل في القدس', en: 'I work in Jerusalem (bashtaghil fil-ʔuds)' },
+      { ar: 'رح أتّصل فيك بكرا', en: "I'll call you tomorrow (raḥ attaṣil fīk bukra)" },
+      { ar: 'إستلمت الرسالة إمبارح', en: 'I received the message yesterday (istalamt ir-risāle imbāriḥ)' },
+      { ar: 'منحتاج مصاري', en: 'we need money (mniḥtāj maṣāri)' },
+      { ar: 'إشتقتلك كتير', en: 'I missed you a lot (ishtaʔtillak ktīr)' },
+    ],
+    source_pages: [78, 81],
+    sort_order: 37,
+  },
+
+  // ------------------------------------------------------------ S.C.2 (p.82, 84)
+  {
+    slug: 'sc2-hollow-waw-verbs',
+    title: 'S.C.2 — 3 letters with ا in the middle (راح، قال، شاف، خاف)',
+    category: 'verbs',
+    summary:
+      'Past: drop the ا, ـُ on the first letter (رُحت), not for هيّا & همّا. Present & future: ا → و (بروح). خاف stays regular.',
+    content_md: `## شو يعني S.C.2؟ — what is it?
+
+**فعل فيه ٣ حروف و "ا" في النص**: a verb of 3 letters with ا in the middle, where the present has **و**: راح → بروح, قال → بقول, شاف → بشوف.
+
+The other kind of verb with ا in the middle, where the present has **ي** (باع → ببيع), is **S.C.5**.
+
+## كيف بنشتغل مع S.C.2؟ — how to conjugate
+
+**① Past (الماضي)**
+
+- a. **✗ drop the ا**
+- b. put a **ضمّة ـُ** on the first letter: راح → رُحـ
+- c. **+ suf** → رُحت (ruḥt), رُحنا (ruḥna), رُحتو (ruḥtu)
+- ★ **except هيّا & همّا:** the ا **stays**: **راحت** (rāḥat), **راحو** (rāḥu)
+
+**② Present & future (المضارع والمستقبل)**
+
+- **ا → و**, then **+ pre & suf**: بروح، بتروحي، بيروحو. Future: رح أروح.
+- ⚠ **خاف** is the exception: in the present it's **عادي**, so the ا stays: بخاف (bakhāf).
+
+**Imperative:** the present stem: **روح / روحي / روحو** (imperative special case 2).
+
+## Full table — راح (to go)
+
+${table(RAAH)}
+
+## Full table — خاف (to be afraid), present stays regular
+
+${table(KHAAF)}
+
+## The S.C.2 verbs in the notebook (p.82)
+
+| Past | I (past) | Present | Meaning |
+|---|---|---|---|
+| راح rāḥ | رُحت ruḥt | بروح | to go |
+| كان kān | كُنت kunt | بكون | to be |
+| شاف shāf | شُفت shuft | بشوف | to see / watch |
+| فات fāt | فُتّ futt | بفوت | to enter |
+| قال ʔāl | قُلت ʔult | بقول | to say / tell |
+| مات māt | مُتّ mutt | بموت | to die |
+| زار zār | زُرت zurt | بزور | to visit |
+| باس bās | بُست bust | ببوس | to kiss |
+| قام ʔām | قُمت ʔumt | بقوم | to get up / stand up |
+| صام ṣām | صُمت ṣumt | بصوم | to fast |
+| ساق sāʔ | سُقت suʔt | بسوق | to drive |
+| فاز fāz | فُزت fuzt | بفوز | to win |
+| ذاق dhāʔ | ذُقت dhuʔt | بذوق | to taste |
+| قاد ʔād | قُدت ʔudt | بقود | to lead |
+| غاص ghāṣ | غُصت ghuṣt | بغوص | to dive |
+| **خاف khāf** | خُفت khuft | **بخاف** ⚠ | to be afraid |
+
+Some speakers say شِفت, خِفت or مِتّ with an *i* sound. The notebook writes ضمّة, so check with Basil which he prefers.
+
+${PRONUNCIATION_KEY}`,
+    examples: [
+      { ar: 'رُحت عالسوق إمبارح', en: 'I went to the market yesterday (ruḥt ʕas-sūʔ imbāriḥ)' },
+      { ar: 'هيّا راحت عالبيت', en: 'she went home (hiyye rāḥat ʕal-bēt) ★ ا stays' },
+      { ar: 'شُفت صاحبي بالجامعة', en: 'I saw my friend at the university (shuft ṣāḥbi bil-jāmʕa)' },
+      { ar: 'رح نزور تيتا بكرا', en: "we'll visit grandma tomorrow (raḥ nzūr tēta bukra)" },
+      { ar: 'ما بخاف من إشي', en: "I'm not afraid of anything (ma bakhāf min ishi)" },
+    ],
+    source_pages: [82, 84],
+    sort_order: 38,
   },
 
   // ------------------------------------------------------------ S.C.3
@@ -1020,9 +1252,11 @@ ${table(NAM)}
 | عاد ʕād → عِدت | بعيد baʕīd | to repeat |
 | **نام nām → نِمت** | **بنام banām** ⚠ | to sleep |
 
-## Related: the "و" verbs (not on this page)
+## S.C.2 vs S.C.5
 
-راح, شاف, قال and كان also drop the ا in the past, but with a **ُ** instead: **رُحت** (ruḥt), **شُفت** (shuft), **قُلت** (ʔult), **كُنت** (kunt). In the present the ا becomes **و**: بروح، بشوف، بقول، بكون. Their imperative is the imperative's special case 2: روح، قول، كون.
+Both have ا in the middle. The present tells them apart:
+- **S.C.5:** ا → **ي** in the present (باع → ببيع), and the past takes **ـِ** (بِعت).
+- **S.C.2:** ا → **و** in the present (راح → بروح), and the past takes **ـُ** (رُحت). See *S.C.2*.
 
 ${PRONUNCIATION_KEY}`,
     examples: [

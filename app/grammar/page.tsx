@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ChevronDown, ChevronRight, ImageIcon, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, ImageIcon, RefreshCw, Trash2 } from 'lucide-react';
 import type { GrammarRule } from '@/types';
 import { cn } from '@/lib/utils';
 import { GRAMMAR } from '@/lib/grammar-content';
+import { SECTIONS, sectionOf, orderKey, type SectionId } from '@/lib/grammar-sections';
 import { notebookPageImage } from '@/lib/notebook-images';
 
 // Rules written in the app's code are always the newest version, so they replace
@@ -69,10 +70,23 @@ export default function GrammarPage() {
     return v.scanned ? pageMap[v.page] || null : notebookPageImage(v.page) || pageMap[v.page] || null;
   }
 
-  const byCategory = rules.reduce<Record<string, GrammarRule[]>>((acc, r) => {
-    (acc[r.category] = acc[r.category] || []).push(r);
-    return acc;
-  }, {});
+  const sections = SECTIONS.map((sec) => ({
+    ...sec,
+    list: rules.filter((r) => sectionOf(r) === sec.id).sort((a, b) => orderKey(a) - orderKey(b)),
+  })).filter((sec) => sec.list.length);
+
+  async function moveRule(r: GrammarRule, section: SectionId) {
+    const { error } = await supabase.from('grammar_rules').update({ category: `section:${section}` }).eq('slug', r.slug);
+    if (error) return alert('Could not move: ' + error.message);
+    setRules((list) => list.map((x) => (x.slug === r.slug ? { ...x, category: `section:${section}` } : x)));
+  }
+
+  async function deleteRule(r: GrammarRule) {
+    if (!confirm(`Delete the card "${r.title}"? This can't be undone.`)) return;
+    const { error } = await supabase.from('grammar_rules').delete().eq('slug', r.slug);
+    if (error) return alert('Could not delete: ' + error.message);
+    setRules((list) => list.filter((x) => x.slug !== r.slug));
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 pt-6">
@@ -90,9 +104,11 @@ export default function GrammarPage() {
       </div>
       <p className="text-sm text-gray-400 mb-4">Rules & patterns from your notebook, with pronunciation and examples.</p>
 
-      {Object.entries(byCategory).map(([cat, list]) => (
+      {sections.map(({ id: cat, title: secTitle, ar: secAr, list }) => (
         <section key={cat} className="mb-6">
-          <h2 className="text-xs uppercase tracking-widest text-brand-500 font-semibold mb-2">{cat}</h2>
+          <h2 className="text-xs uppercase tracking-widest text-brand-500 font-semibold mb-2 flex items-baseline gap-2">
+            {secTitle} <span className="arabic normal-case tracking-normal text-sm text-stone-200/50">{secAr}</span>
+          </h2>
           <div className="border hairline rounded-2xl overflow-hidden divide-y hairline bg-white/[0.02]">
             {list.map((r) => (
               <div key={r.id} id={`rule-${r.slug}`} className="scroll-mt-4">
@@ -102,8 +118,15 @@ export default function GrammarPage() {
                 >
                   {open === r.slug ? <ChevronDown className="w-4 h-4 mt-1 text-gray-500 shrink-0" /> : <ChevronRight className="w-4 h-4 mt-1 text-gray-500 shrink-0" />}
                   <div className="flex-1">
-                    <div className="font-semibold">{r.title}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">{r.summary}</div>
+                    <div className="font-semibold">
+                      {isolateArabic(r.title)}
+                      {r.slug.startsWith('scan-') && (
+                        <span className="ml-2 align-middle text-[10px] font-medium rounded-full px-2 py-0.5 bg-white/5 border hairline text-stone-200/60">
+                          scanned
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">{isolateArabic(r.summary)}</div>
                   </div>
                 </button>
                 {open === r.slug && (
@@ -123,6 +146,28 @@ export default function GrammarPage() {
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
+                    {r.slug.startsWith('scan-') && (
+                      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-stone-200/70">
+                        <span>Section:</span>
+                        <select
+                          value={sectionOf(r)}
+                          onChange={(e) => moveRule(r, e.target.value as SectionId)}
+                          className="bg-white/5 border hairline rounded-lg px-2 py-1"
+                        >
+                          {SECTIONS.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.title}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => deleteRule(r)}
+                          className="ml-auto flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-200 px-2 py-1"
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete card
+                        </button>
                       </div>
                     )}
                     {r.source_pages.length > 0 && (
@@ -177,6 +222,13 @@ export default function GrammarPage() {
       `}</style>
     </div>
   );
+}
+
+/** Wrap each run of Arabic in <bdi> so mixed lines keep their left-to-right order. */
+function isolateArabic(text: string | null | undefined) {
+  if (!text) return text;
+  const parts = text.split(/([\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+(?:[ \u060C][\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+)*)/);
+  return parts.map((part, i) => (i % 2 ? <bdi key={i}>{part}</bdi> : part));
 }
 
 // Richer markdown-to-HTML with tables, headings, code, and lists.

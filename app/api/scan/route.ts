@@ -24,7 +24,7 @@ Then extract everything:
    KEEP BOTH FORMS. Most words in this notebook are written with two forms — singular and plural for nouns, past and present for verbs. Put them in "arabic" exactly like this, separated by "، ": "بَيت، بُيُوت", "طَلَب، بُطلُب". If the plural is written as a shorthand ending (ات / ين), keep the shorthand: "كَاسَة، ات". If only one form is written, give only that one in "arabic" — never invent the other there.
    For a VERB written with only its past form, also fill "suggested_present": its Palestinian present tense, "he" form with full tashkeel (e.g. كَتَب → "يِكتِب", حَكَى → "يِحكِي", بَاع → "يبِيع"). It is shown to the learner as a suggestion, separate from the notebook text. Leave it out for nouns and for verbs that already have both forms.
 2. For grammar pages, TEACH the rule — don't just summarise it. The notebook follows teacher Basil Zboun's method; keep his notation and logic:
-   - "suf" = suffix (ending), "pre" = prefix. Special cases are named S.C.1, S.C.2, S.C.3… — keep those names.
+   - "suf" = suffix (ending), "pre" = prefix. A crossed letter or "✗" means "drop this letter". Special cases are named S.C.1, S.C.2, S.C.3… — keep those names. In this notebook: S.C.1 = verb starting with ا, more than 3 letters (present drops the ا: إشتغل → بشتغل); S.C.2 = 3 letters with ا in the middle, و in the present (راح → رُحت، بروح); S.C.3 = two letters with shadda (حبّ → حبّيت); S.C.4 = ends in ى (حكى → حكيت، بحكي); S.C.5 = 3 letters with ا in the middle, ي in the present (باع → بِعت، ببيع).
    - Exceptions are usually written "(مش لـ: هيّا & همّا)" for the past and "(إنتي، إنتو & همّا)" for the present — explain them and mark those people with ★.
    - In "content" (markdown) write: what the rule is (in plain English, 1–3 short paragraphs), the steps exactly as the page gives them (① past, ② present & future, imperative…), then for verbs a FULL conjugation table with the columns | Person | Past (ماضي) | Present (مضارع) | Future (مستقبل) | and one row per person in this order: أنا، إنتا، إنتي، هوّ، هيّا، إحنا، إنتو، همّا. Each cell: **Arabic** + transliteration (e.g. **بحكي** baḥki). Then the imperative: إنتا / إنتي / إنتو. Then a table of every verb or word listed on the page with its meaning.
    - Palestinian (Jerusalem / Bethlehem) dialect: present with بـ (بحكي، بتحكي، بيحكي، منحكي), future with رح, ق pronounced as ʔ.
@@ -42,6 +42,7 @@ Respond with ONLY valid JSON:
   "grammar": {
     "title": "if grammar page: short English title",
     "summary": "if grammar page: one sentence rule description",
+    "section": "if grammar page: ONE of nouns | numbers | verbs | verb-cases | negation | kan | imperative | time | comparatives | words | other  (verbs = how past/present/future work in general; verb-cases = any S.C. special case; kan = كان / عند / to be / to have; negation = saying not)",
     "content": "if grammar page: full teaching explanation in markdown (see rules above)",
     "examples": [{ "ar": "حكيت مع صاحبي", "en": "I spoke with my friend (ḥakēt maʕ ṣāḥbi)" }]
   },

@@ -79,7 +79,7 @@ export function conjugate(arabic: string, english: string, notes?: string | null
   const key = letters(pastWord);
   const star = {
     // past: S.C.3 / S.C.4 / S.C.5 change for everyone except هيّا & همّا
-    starPast: c === 'regular' || c === 'irregular' ? [] : [4, 7],
+    starPast: c === 'regular' || c === 'irregular' || c === 'sc1' ? [] : [4, 7],
     // present: S.C.4 drops ي for إنتي، إنتو & همّا
     starPresent: c === 'sc4' || c === 'keeps-a' ? [2, 6, 7] : [],
   };
@@ -119,12 +119,12 @@ export function conjugate(arabic: string, english: string, notes?: string | null
     suffixed = P.replace(/ي[ً-ْ]*$/, '');
     joint = 'ي';
     vowelStem = P;
-  } else if (c === 'sc5') {
-    // drop the ا; for 3-letter verbs the first letter takes ـِ (or ـُ for و verbs: لام → لُمت)
-    const presentHasWaw = presentWord ? /و/.test(noVowels(presentStem(presentWord, pastWord))) : false;
+  } else if (c === 'sc5' || c === 'sc2' || (c === 'sc1' && /ا.$/.test(pl) && pl.length >= 5)) {
+    // drop the ا. 3 letters: the first letter takes ـُ (S.C.2: رُحت، خُفت) or ـِ (S.C.5: بِعت، نِمت).
+    // Long verbs like إحتاج: إحتجت.
     const idx = P.lastIndexOf('ا');
     const withoutAlif = noVowels(P.slice(0, idx)) + P.slice(idx + 1);
-    suffixed = pl.length === 3 ? withoutAlif[0] + (presentHasWaw ? 'ُ' : 'ِ') + withoutAlif.slice(1) : withoutAlif;
+    suffixed = pl.length === 3 ? withoutAlif[0] + (c === 'sc2' ? 'ُ' : 'ِ') + withoutAlif.slice(1) : withoutAlif;
   } else {
     suffixed = P;
   }
