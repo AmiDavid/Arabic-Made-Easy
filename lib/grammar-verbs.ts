@@ -559,6 +559,26 @@ const NAM: Verb = {
   starPres: [],
 };
 
+/** The worked tables above, keyed by the verb as it appears in the vocabulary — used by the tests. */
+export const VERB_TABLES: Record<string, { english: string; table: Verb }> = {
+  'شِرِب': { english: 'to drink', table: SHIRIB },
+  'حَبَّ، يحِب': { english: 'to like / love', table: HABB },
+  'حَطَّ، يحُط': { english: 'to put', table: HATT },
+  'حَكَى': { english: 'to speak / talk / tell / say', table: HAKA },
+  'اِشتَرَى': { english: 'to buy', table: ISHTARA },
+  'سَوَّى': { english: 'to do / make', table: SAWWA },
+  'اِستَنَّى': { english: 'to wait', table: ISTANNA },
+  'اِتمَنَّى': { english: 'to hope / to wish', table: ITMANNA },
+  'اِتغَدَّى': { english: 'to have lunch', table: ITGHADDA },
+  'اِتعَشَّى': { english: 'to have dinner', table: ITASHSHA },
+  'نِسِي': { english: 'to forget', table: NISI },
+  'صِحِي': { english: 'to wake up', table: SIHI },
+  'أَجَى': { english: 'to come', table: AJA },
+  'بَاع': { english: 'to sell', table: BAA },
+  'جَاب': { english: 'to bring', table: JAB },
+  'نَام': { english: 'to sleep', table: NAM },
+};
+
 // ---------------------------------------------------------------- rules
 
 const PRONUNCIATION_KEY = `**How to read the pronunciation:** ḥ = the breathy ح · kh = خ · gh = غ · ʕ = ع · ʔ = a catch in the throat (in Jerusalem & Bethlehem ق is said this way: قلى = ʔala) · ṣ ḍ ṭ = heavy ص ض ط · a long vowel has a line: ā ī ū ē.`;

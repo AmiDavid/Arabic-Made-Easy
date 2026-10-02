@@ -3,7 +3,8 @@ import { WordWithForms } from '@/components/word-forms';
 import { parseForms } from '@/lib/forms';
 import { verbInfo, VERB_CASES, type VerbCase } from '@/lib/verbs';
 import { ConjugationSheet } from '@/components/conjugation-sheet';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Pencil, ShieldCheck } from 'lucide-react';
+import { EditEntrySheet } from '@/components/edit-entry-sheet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Search, RefreshCw } from 'lucide-react';
@@ -52,6 +53,12 @@ export default function CatalogPage() {
   // word type: all words, all verbs, or one verb case
   const [wordType, setWordType] = useState<'all' | 'verbs' | VerbCase>('all');
   const [conjFor, setConjFor] = useState<Entry | null>(null);
+  const [editFor, setEditFor] = useState<Entry | null>(null);
+  const replaceEntry = (u: Entry) => {
+    setEntries((list) => list.map((x) => (x.id === u.id ? u : x)));
+    setConjFor((c) => (c && c.id === u.id ? u : c));
+  };
+  const removeEntry = (id: string) => setEntries((list) => list.filter((x) => x.id !== id));
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const lastLoad = useRef(0);
@@ -120,6 +127,10 @@ export default function CatalogPage() {
     <div className="max-w-3xl mx-auto px-4 pt-6">
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-bold">Vocabulary</h1>
+        <div className="flex items-center gap-4">
+        <a href="/check" className="text-xs text-gold-300 flex items-center gap-1">
+          <ShieldCheck className="w-3.5 h-3.5" /> Check & fix
+        </a>
         <button
           onClick={() => load(true)}
           className="text-xs text-stone-200/60 hover:text-gold-400 flex items-center gap-1"
@@ -127,6 +138,7 @@ export default function CatalogPage() {
         >
           <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} /> Reload
         </button>
+        </div>
       </div>
       <p className="text-sm text-stone-200/70 mb-4">
         {loading
@@ -221,7 +233,19 @@ export default function CatalogPage() {
                       </div>
                     )}
                   </div>
-                  {e.uncertain && <span className="text-[11px] text-amber-400" title="Uncertain reading">?</span>}
+                  <div className="flex flex-col items-center gap-1">
+                    <button
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        setEditFor(e);
+                      }}
+                      aria-label="Fix this word"
+                      className="p-1.5 -m-1 rounded-lg text-stone-200/40 hover:text-gold-300 hover:bg-white/5"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    {e.uncertain && <span className="text-[11px] text-amber-400" title="Unclear reading">?</span>}
+                  </div>
                 </li>
               );
             }
@@ -238,7 +262,17 @@ export default function CatalogPage() {
           arabic={conjFor.arabic}
           english={conjFor.english}
           notes={conjFor.notes}
+          entry={conjFor}
+          onEntryChanged={replaceEntry}
           onClose={() => setConjFor(null)}
+        />
+      )}
+      {editFor && (
+        <EditEntrySheet
+          entry={editFor}
+          onClose={() => setEditFor(null)}
+          onSaved={replaceEntry}
+          onDeleted={removeEntry}
         />
       )}
     </div>

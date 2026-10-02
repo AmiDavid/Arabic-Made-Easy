@@ -3,9 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { X, Loader2 } from 'lucide-react';
 import { conjugate, PERSONS, type Conjugation } from '@/lib/conjugate';
-import { VERB_CASES } from '@/lib/verbs';
+import { VERB_CASES, verbInfo } from '@/lib/verbs';
 import { VerbCaseBadge } from '@/components/word-forms';
 import { cn } from '@/lib/utils';
+import type { Entry } from '@/types';
+import { updateEntry, withoutSuggestion, withChecked } from '@/lib/qa';
+import { parseForms } from '@/lib/forms';
 
 type Pron = { past: string[]; present: string[]; future: string[]; imperative: string[]; issues: string[] };
 
@@ -23,11 +26,16 @@ export function ConjugationSheet({
   arabic,
   english,
   notes,
+  entry,
+  onEntryChanged,
   onClose,
 }: {
   arabic: string;
   english: string;
   notes?: string | null;
+  /** when given, the present form can be corrected and saved */
+  entry?: Entry;
+  onEntryChanged?: (e: Entry) => void;
   onClose: () => void;
 }) {
   const c = useMemo(() => conjugate(arabic, english, notes), [arabic, english, notes]);
@@ -188,6 +196,9 @@ export function ConjugationSheet({
               </Link>
             </div>
             {error && <p className="mt-2 text-sm text-rose-300">{error}</p>}
+            {entry && onEntryChanged && (
+              <FixPresent entry={entry} current={c.present?.[3] ? presentHe(entry) : ''} suggested={c.presentSuggested} onSaved={onEntryChanged} />
+            )}
             {pron?.issues?.length ? (
               <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
                 <div className="font-semibold text-amber-200 mb-1">The AI teacher would say it differently:</div>
@@ -254,6 +265,98 @@ function Table({ c, pron, onSpeak }: { c: Conjugation; pron: Pron | null; onSpea
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/** the present "he" form as stored or suggested (what the table is built from) */
+function presentHe(entry: Entry) {
+  const f = parseForms(entry.arabic, entry.english);
+  if (f.second && f.kind === 'present') return f.second.split(' / ')[0];
+  return verbInfo(entry.arabic, entry.english, entry.notes)?.present?.split(' / ')[0] || '';
+}
+
+/**
+ * The whole table is built from two forms: the past ("he") and the present.
+ * Correcting the present here fixes every row, and writes it into the word
+ * the notebook way ("past، present"), so the ✦ suggestion disappears.
+ */
+function FixPresent({
+  entry,
+  current,
+  suggested,
+  onSaved,
+}: {
+  entry: Entry;
+  current: string;
+  suggested: boolean;
+  onSaved: (e: Entry) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(current);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const past = entry.arabic.split('،')[0].trim();
+
+  async function save(v: string) {
+    setBusy(true);
+    setErr(null);
+    try {
+      const updated = await updateEntry(entry.id, {
+        arabic: `${past}، ${v.trim()}`,
+        notes: withChecked(withoutSuggestion(entry.notes), 'ok'),
+      });
+      onSaved(updated);
+      setOpen(false);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-5 rounded-2xl border hairline bg-white/[0.03] p-3 text-sm">
+      {!open ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-stone-200/70">{suggested ? 'Is the present form right?' : 'Something wrong in the table?'}</span>
+          {suggested && current && (
+            <button
+              onClick={() => save(current)}
+              disabled={busy}
+              className="rounded-lg bg-olive-500/20 border border-olive-500/40 text-olive-200 px-3 py-1.5 disabled:opacity-60"
+            >
+              ✓ Yes, <bdi className="arabic">{current}</bdi> is right
+            </button>
+          )}
+          <button onClick={() => setOpen(true)} className="rounded-lg bg-white/5 border hairline px-3 py-1.5">
+            ✎ Fix the present form
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="text-stone-200/80">
+            Type the present tense for <b>he</b> (e.g. <bdi className="arabic">يِكتِب</bdi> or{' '}
+            <bdi className="arabic">بِيكتِب</bdi>). The whole table is rebuilt from it.
+          </div>
+          <div className="flex gap-2">
+            <input
+              dir="rtl"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              className="flex-1 bg-white/5 border hairline rounded-xl px-3 py-2 arabic text-xl text-right focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+            />
+            <button
+              onClick={() => value.trim() && save(value)}
+              disabled={busy || !value.trim()}
+              className="rounded-xl bg-gold-500/25 border border-gold-500/50 text-gold-100 px-4 font-semibold flex items-center gap-1.5 disabled:opacity-60"
+            >
+              {busy && <Loader2 className="w-4 h-4 animate-spin" />} Save
+            </button>
+          </div>
+        </div>
+      )}
+      {err && <p className="mt-2 text-rose-300">{err}</p>}
     </div>
   );
 }
