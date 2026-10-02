@@ -9,6 +9,7 @@ type Extracted = {
   arabic: string;
   english: string;
   uncertain: boolean;
+  suggested_present?: string;
   keep: boolean;
   already_known: string | boolean;
 };
@@ -95,6 +96,7 @@ export default function ScanPage() {
         page_label: `Notebook 3, p.${nextPage}`,
         entry_type: 'vocab' as const,
         uncertain: e.uncertain,
+        notes: e.suggested_present ? `present (suggested): ${e.suggested_present}` : null,
       }));
       const { error } = await supabase.from('entries').insert(rows);
       if (error) return alert('Save failed: ' + error.message);

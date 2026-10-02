@@ -1,6 +1,7 @@
 'use client';
 import { WordWithForms } from '@/components/word-forms';
 import { parseForms } from '@/lib/forms';
+import { verbInfo, VERB_CASES, type VerbCase } from '@/lib/verbs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Search, RefreshCw } from 'lucide-react';
@@ -14,6 +15,8 @@ export default function CatalogPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [q, setQ] = useState('');
   const [topicId, setTopicId] = useState<string>('all');
+  // word type: all words, all verbs, or one verb case
+  const [wordType, setWordType] = useState<'all' | 'verbs' | VerbCase>('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const lastLoad = useRef(0);
@@ -58,6 +61,12 @@ export default function CatalogPage() {
   const matching = useMemo(() => {
     let list = entries;
     if (topicId !== 'all') list = list.filter((e) => e.topic_id === topicId);
+    if (wordType !== 'all') {
+      list = list.filter((e) => {
+        const v = verbInfo(e.arabic, e.english, e.notes);
+        return v && (wordType === 'verbs' || v.verbCase === wordType);
+      });
+    }
     if (q.trim()) {
       const bare = stripDiacritics(q.toLowerCase().trim());
       list = list.filter(
@@ -68,10 +77,10 @@ export default function CatalogPage() {
       );
     }
     return list;
-  }, [entries, q, topicId]);
+  }, [entries, q, topicId, wordType]);
 
   const shown = matching.slice(0, PAGE_LIMIT);
-  const filtering = topicId !== 'all' || q.trim() !== '';
+  const filtering = topicId !== 'all' || q.trim() !== '' || wordType !== 'all';
 
   function changeTopic(id: string) {
     setTopicId(id);
@@ -123,18 +132,51 @@ export default function CatalogPage() {
         </select>
       </div>
 
+      <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 -mx-4 px-4 no-scrollbar">
+        {(['all', 'verbs', 'regular', 'sc3', 'sc4', 'keeps-a', 'sc5', 'irregular'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => {
+              setWordType(t);
+              window.scrollTo({ top: 0 });
+            }}
+            className={cn(
+              'shrink-0 text-xs rounded-full px-3 py-1.5 border transition',
+              wordType === t
+                ? 'bg-gold-500/20 border-gold-500/50 text-gold-200'
+                : 'bg-white/5 border-white/10 text-stone-200/70'
+            )}
+          >
+            {t === 'all' ? 'All words' : t === 'verbs' ? 'All verbs' : VERB_CASES[t].label}
+          </button>
+        ))}
+      </div>
+      {wordType !== 'all' && wordType !== 'verbs' && (
+        <p className="text-xs text-stone-200/60 -mt-1 mb-3">
+          {VERB_CASES[wordType].long} ·{' '}
+          <a href={`/grammar?open=${VERB_CASES[wordType].slug}`} className="text-gold-300 underline underline-offset-2">
+            how to conjugate
+          </a>
+        </p>
+      )}
+      {wordType !== 'all' && (
+        <p className="text-[11px] text-stone-200/50 -mt-1 mb-3">
+          ✦ = present form suggested by the app (not written in your notebook)
+        </p>
+      )}
+
       {loading ? (
         <div className="text-center text-stone-200/60 py-12">Loading…</div>
       ) : shown.length === 0 ? (
         <div className="text-center text-stone-200/60 py-12">No matches.</div>
       ) : (
         <ul
-          key={`${topicId}|${q}`}
+          key={`${topicId}|${q}|${wordType}`}
           className="divide-y hairline border hairline rounded-2xl overflow-hidden bg-night-800/60"
         >
           {shown.map((e) => (
             <li key={e.id} className="p-3 flex items-start gap-4">
-              <WordWithForms arabic={e.arabic} english={e.english} className="flex-1" />
+              <WordWithForms arabic={e.arabic} english={e.english} notes={e.notes} showVerbCase className="flex-1" />
               <div className="flex-1 text-sm">
                 <div>{e.english.replace('[?]', '')}</div>
                 <div className="text-[11px] text-stone-200/50 mt-0.5">{e.page_label || '—'}</div>

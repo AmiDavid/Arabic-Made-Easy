@@ -35,6 +35,15 @@ export default function GrammarPage() {
 
   useEffect(() => {
     loadRules();
+    // /grammar?open=sc4-alif-maqsura-verbs → open that card and scroll to it
+    const slug = new URLSearchParams(window.location.search).get('open');
+    if (slug) {
+      const rule = GRAMMAR.find((g) => g.slug === slug);
+      if (rule) {
+        setOpen(slug);
+        setTimeout(() => document.getElementById(`rule-${slug}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+      }
+    }
   }, []);
 
   async function reseedGrammar() {
@@ -83,18 +92,18 @@ export default function GrammarPage() {
           <h2 className="text-xs uppercase tracking-widest text-brand-500 font-semibold mb-2">{cat}</h2>
           <div className="border hairline rounded-2xl overflow-hidden divide-y hairline bg-white/[0.02]">
             {list.map((r) => (
-              <div key={r.id}>
+              <div key={r.id} id={`rule-${r.slug}`} className="scroll-mt-4">
                 <button
-                  onClick={() => setOpen(open === r.id ? null : r.id)}
+                  onClick={() => setOpen(open === r.slug ? null : r.slug)}
                   className="w-full flex items-start gap-2 p-3 hover:bg-white/[0.03] text-left"
                 >
-                  {open === r.id ? <ChevronDown className="w-4 h-4 mt-1 text-gray-500 shrink-0" /> : <ChevronRight className="w-4 h-4 mt-1 text-gray-500 shrink-0" />}
+                  {open === r.slug ? <ChevronDown className="w-4 h-4 mt-1 text-gray-500 shrink-0" /> : <ChevronRight className="w-4 h-4 mt-1 text-gray-500 shrink-0" />}
                   <div className="flex-1">
                     <div className="font-semibold">{r.title}</div>
                     <div className="text-xs text-gray-400 mt-0.5">{r.summary}</div>
                   </div>
                 </button>
-                {open === r.id && (
+                {open === r.slug && (
                   <div className="px-3 pb-4 pt-1 pop">
                     <div
                       className="text-sm text-gray-200 leading-relaxed grammar-body"

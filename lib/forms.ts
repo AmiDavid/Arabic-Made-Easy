@@ -60,6 +60,11 @@ export function kindFromEnglish(english: string): FormKind {
 export function parseForms(arabic: string, english = ''): WordForms {
   const raw = (arabic || '').trim();
   const empty: WordForms = { main: raw, second: null, kind: null, feminine: null, raw };
+  // "فَتَح (يفتَح)" — present written in brackets
+  const br = raw.match(/^([^()،]+?)\s*\(([^()]+)\)\s*$/);
+  if (!raw.includes('،') && br && kindFromEnglish(english) === 'present') {
+    return { main: br[1].trim(), second: br[2].trim(), kind: 'present', feminine: null, raw };
+  }
   if (!raw.includes('،')) return empty;
 
   const segs = raw.split(/\s*\/\s*/).filter(Boolean);

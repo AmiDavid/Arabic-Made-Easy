@@ -50,3 +50,6 @@ body {
   background-repeat: repeat;
   color: rgba(240, 230, 200, 0.08);  /* currentColor controls stroke/fill opacity */
 }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
