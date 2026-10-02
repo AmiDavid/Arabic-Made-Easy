@@ -1,4 +1,6 @@
 'use client';
+import { WordWithForms } from '@/components/word-forms';
+import { parseForms } from '@/lib/forms';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Search, RefreshCw } from 'lucide-react';
@@ -59,7 +61,10 @@ export default function CatalogPage() {
     if (q.trim()) {
       const bare = stripDiacritics(q.toLowerCase().trim());
       list = list.filter(
-        (e) => stripDiacritics(e.arabic).toLowerCase().includes(bare) || e.english.toLowerCase().includes(bare)
+        (e) =>
+          stripDiacritics(e.arabic).toLowerCase().includes(bare) ||
+          stripDiacritics(parseForms(e.arabic, e.english).second || '').includes(bare) ||
+          e.english.toLowerCase().includes(bare)
       );
     }
     return list;
@@ -128,8 +133,8 @@ export default function CatalogPage() {
           className="divide-y hairline border hairline rounded-2xl overflow-hidden bg-night-800/60"
         >
           {shown.map((e) => (
-            <li key={e.id} className="p-3 flex items-baseline gap-4">
-              <div className="arabic flex-1 text-right">{e.arabic}</div>
+            <li key={e.id} className="p-3 flex items-start gap-4">
+              <WordWithForms arabic={e.arabic} english={e.english} className="flex-1" />
               <div className="flex-1 text-sm">
                 <div>{e.english.replace('[?]', '')}</div>
                 <div className="text-[11px] text-stone-200/50 mt-0.5">{e.page_label || '—'}</div>

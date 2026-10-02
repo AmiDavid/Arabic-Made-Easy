@@ -34,7 +34,7 @@ Answer through the respond tool:
 - arabic: your reply in Palestinian Arabic with tashkeel
 - english: literal English translation of your reply
 - corrections: mistakes in the learner's last message (empty list if none)
-- new_words: words in YOUR reply the learner probably doesn't know yet (max 3, empty list if none)`;
+- new_words: words in YOUR reply the learner probably doesn't know yet (max 3, empty list if none). Write each word the way the learner's notebook does, with both forms separated by "، ": nouns as singular، plural (بَيت، بُيُوت), verbs as past، present (حَكَى، بِيحكِي), and English for verbs starting with "to".`;
 
 const SCHEMA = {
   type: 'object',

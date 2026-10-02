@@ -1,4 +1,5 @@
 'use client';
+import { parseForms } from '@/lib/forms';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Entry, Topic } from '@/types';
@@ -46,11 +47,11 @@ export default function MatchPage() {
     let q = supabase.from('entries').select('*').limit(200);
     if (topicId !== 'all') q = q.eq('topic_id', topicId);
     const { data } = await q;
-    const pool = ((data as Entry[]) || []).filter((e) => e.arabic.length < 25 && e.english.length < 30);
+    const pool = ((data as Entry[]) || []).filter((e) => parseForms(e.arabic, e.english).main.length < 25 && e.english.length < 30);
     const picked = pool.sort(() => Math.random() - 0.5).slice(0, PAIRS);
     const c: Card[] = [];
     picked.forEach((e) => {
-      c.push({ id: `${e.id}-ar`, entryId: e.id, side: 'ar', text: e.arabic, matched: false });
+      c.push({ id: `${e.id}-ar`, entryId: e.id, side: 'ar', text: parseForms(e.arabic, e.english).main, matched: false });
       c.push({ id: `${e.id}-en`, entryId: e.id, side: 'en', text: e.english.replace('[?]', '').trim(), matched: false });
     });
     setCards(c.sort(() => Math.random() - 0.5));

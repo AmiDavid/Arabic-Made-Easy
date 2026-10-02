@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     while (true) {
       const { data } = await admin.from('entries').select('arabic').order('id').range(from, from + 999);
       if (!data?.length) break;
-      for (const e of data) existing.add(stripDiacritics(String(e.arabic)).trim());
+      for (const e of data) existing.add(stripDiacritics(String(e.arabic).split('،')[0]).trim());
       if (data.length < 1000) break;
       from += 1000;
     }
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       const ar = String(it.arabic || '').trim();
       const en = String(it.english || '').trim();
       if (!ar || !en) continue;
-      const key = stripDiacritics(ar).trim();
+      const key = stripDiacritics(ar.split('،')[0]).trim();
       if (existing.has(key)) {
         skipped++;
         continue;

@@ -1,4 +1,6 @@
 'use client';
+import { parseForms } from '@/lib/forms';
+import { WordWithForms } from '@/components/word-forms';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Entry, Topic } from '@/types';
@@ -65,12 +67,12 @@ export default function QuizPage() {
     const otherPool = pool.filter((e) => e.id !== correctEntry.id);
     const distractors = otherPool.sort(() => Math.random() - 0.5).slice(0, 3);
     const options = [correctEntry, ...distractors]
-      .map((e) => direction === 'ar-to-en' ? e.english.replace('[?]', '').trim() : e.arabic)
+      .map((e) => direction === 'ar-to-en' ? e.english.replace('[?]', '').trim() : parseForms(e.arabic, e.english).main)
       .sort(() => Math.random() - 0.5);
     setQ({
       entry: correctEntry,
       options,
-      correct: direction === 'ar-to-en' ? correctEntry.english.replace('[?]', '').trim() : correctEntry.arabic,
+      correct: direction === 'ar-to-en' ? correctEntry.english.replace('[?]', '').trim() : parseForms(correctEntry.arabic, correctEntry.english).main,
     });
     setPicked(null);
   }
@@ -132,9 +134,11 @@ export default function QuizPage() {
       ) : (
         <>
           <div className="min-h-[120px] rounded-3xl border hairline bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-6 flex items-center justify-center text-center pop">
-            <div className={cn(direction === 'ar-to-en' && 'arabic', 'text-3xl font-semibold')}>
-              {prompt}
-            </div>
+            {direction === 'ar-to-en' ? (
+              <WordWithForms arabic={q.entry.arabic} english={q.entry.english} size="xl" align="center" />
+            ) : (
+              <div className="text-3xl font-semibold">{prompt}</div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-2 mt-4">

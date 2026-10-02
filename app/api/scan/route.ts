@@ -21,6 +21,7 @@ The user photographs a handwritten notebook page. First decide what kind of page
 
 Then extract everything:
 1. Vocabulary pairs: every Arabic word/phrase and its English translation. Preserve diacritics (tashkeel) exactly as written. Keep multi-word English like "to walk / hike" together as one entry.
+   KEEP BOTH FORMS. Most words in this notebook are written with two forms — singular and plural for nouns, past and present for verbs. Put them in "arabic" exactly like this, separated by "، ": "بَيت، بُيُوت", "طَلَب، بُطلُب". If the plural is written as a shorthand ending (ات / ين), keep the shorthand: "كَاسَة، ات". If only one form is written, give only that one — never invent the other.
 2. For grammar pages, TEACH the rule — don't just summarise it. The notebook follows teacher Basil Zboun's method; keep his notation and logic:
    - "suf" = suffix (ending), "pre" = prefix. Special cases are named S.C.1, S.C.2, S.C.3… — keep those names.
    - Exceptions are usually written "(مش لـ: هيّا & همّا)" for the past and "(إنتي، إنتو & همّا)" for the present — explain them and mark those people with ★.
@@ -172,14 +173,15 @@ export async function POST(req: NextRequest) {
         { english: string; page_label: string | null }[]
       >();
       for (const e of existing) {
-        const key = stripDiacritics(String(e.arabic)).trim();
+        const key = stripDiacritics(String(e.arabic).split('،')[0]).trim();
         if (!existingByBare.has(key)) existingByBare.set(key, []);
         existingByBare
           .get(key)!
           .push({ english: e.english, page_label: e.page_label });
       }
       parsed.entries = entries.map((e) => {
-        const key = stripDiacritics(e.arabic).trim();
+        // compare by the first form, so "بيت، بيوت" matches an existing "بيت"
+        const key = stripDiacritics(e.arabic.split('،')[0]).trim();
         const matches = existingByBare.get(key);
         return {
           ...e,

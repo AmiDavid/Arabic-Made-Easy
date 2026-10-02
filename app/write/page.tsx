@@ -1,4 +1,6 @@
 'use client';
+import { parseForms } from '@/lib/forms';
+import { WordWithForms } from '@/components/word-forms';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Entry, Topic } from '@/types';
@@ -31,7 +33,7 @@ export default function WritePage() {
       if (topicId !== 'all') q = q.eq('topic_id', topicId);
       const { data } = await q;
       const clean = ((data as Entry[]) || []).filter(
-        (e) => !e.uncertain && e.arabic?.length < 20 && e.english && e.english.length < 30
+        (e) => !e.uncertain && e.english && e.english.length < 30 && parseForms(e.arabic || '', e.english).main.length < 20
       );
       setPool(clean.sort(() => Math.random() - 0.5));
       setLoading(false);
@@ -54,8 +56,10 @@ export default function WritePage() {
   function check() {
     if (!current || !input.trim()) return;
     const user = stripDiacritics(input).trim();
-    const target = stripDiacritics(current.arabic).trim();
-    const correct = user === target;
+    // accept the first form (singular / past), any spelling of it, or both forms as written
+    const f = parseForms(current.arabic, current.english);
+    const accepted = [f.raw, f.main, ...f.main.split(' / ')].map((x) => stripDiacritics(x).trim());
+    const correct = accepted.includes(user);
     setStatus(correct ? 'correct' : 'wrong');
     setStats((s) => correct ? { ...s, right: s.right + 1 } : { ...s, wrong: s.wrong + 1 });
     if (correct) setTimeout(() => next(), 900);
@@ -98,7 +102,14 @@ export default function WritePage() {
       ) : (
         <>
           <div className="min-h-[100px] rounded-3xl border hairline bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-6 flex items-center justify-center text-center pop">
-            <div className="text-2xl font-semibold">{current.english.replace('[?]', '').trim()}</div>
+            <div>
+              <div className="text-2xl font-semibold">{current.english.replace('[?]', '').trim()}</div>
+              {parseForms(current.arabic, current.english).second && (
+                <div className="mt-1 text-xs text-stone-200/60">
+                  Type the {parseForms(current.arabic, current.english).kind === 'plural' ? 'singular' : 'past (he)'} form
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-4">
@@ -129,14 +140,14 @@ export default function WritePage() {
           {status === 'revealed' && (
             <div className="mt-4 p-4 rounded-xl bg-stone-800/40 border hairline">
               <div className="text-xs text-stone-200/60 mb-2">Correct answer:</div>
-              <div className="arabic text-right text-2xl text-gold-500">{current.arabic}</div>
+              <WordWithForms arabic={current.arabic} english={current.english} size="lg" className="text-gold-500" />
             </div>
           )}
 
           {status === 'wrong' && (
             <div className="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/40">
               <div className="text-xs text-rose-300 mb-2">Not quite. Correct:</div>
-              <div className="arabic text-right text-2xl text-gold-500">{current.arabic}</div>
+              <WordWithForms arabic={current.arabic} english={current.english} size="lg" className="text-gold-500" />
             </div>
           )}
 
