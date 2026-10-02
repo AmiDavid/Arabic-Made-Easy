@@ -544,7 +544,7 @@ const NAM: Verb = {
 بتنام|btinām
 مننام|mninām
 بتنامو|btināmu
-بيناموا|bināmu`),
+بينامو|bināmu`),
   fut: f(`رح أنام|raḥ anām
 رح تنام|raḥ tnām
 رح تنامي|raḥ tnāmi
@@ -552,7 +552,7 @@ const NAM: Verb = {
 رح تنام|raḥ tnām
 رح ننام|raḥ nnām
 رح تنامو|raḥ tnāmu
-رح يناموا|raḥ ynāmu`),
+رح ينامو|raḥ ynāmu`),
   imp: f(`نام|nām
 نامي|nāmi
 نامو|nāmu`),
@@ -710,8 +710,10 @@ ${table(HATT)}
 | لفّ laff | لِفّ liff | to turn |
 | شكّ shakk | شِكّ shikk | to doubt (شكّ في) |
 | عضّ ʕaḍḍ | عُضّ ʕuḍḍ | to bite |
+| نطّ naṭṭ | نُطّ nuṭṭ | to jump |
+| رنّ rann | رِنّ rinn | to ring (رنّ على: to call someone) |
 
-The vowel in the second column is the one you hear in the present: ردّ → **بِرُدّ** (barudd), عدّ → **بعِدّ** (baʕidd).
+The vowel in the second column is the one you hear in the present: ردّ → **بَرُدّ** (barudd), عدّ → **بعِدّ** (baʕidd).
 
 ${PRONUNCIATION_KEY}`,
     examples: [
@@ -785,7 +787,7 @@ ${table(SAWWA)}
 | كوى kawa | بكوي bakwi | to iron |
 | قلى ʔala | بقلي baʔli | to fry |
 | شوى shawa | بشوي bashwi | to grill |
-| لغى ligha | بلغي balghi | to cancel |
+| لغى lagha | بلغي balghi | to cancel |
 | بنى bana | ببني babni | to build |
 | صلّى ṣalla | بصلّي baṣalli | to pray |
 | ورجى warja | بورجي bawarji | to show |
@@ -837,7 +839,7 @@ The ★ people are the same: هيّا & همّا in the past, إنتي، إنت�
 ## The rule for all six (as drawn in the notebook)
 
 - **Past, most people:** stem + ي + suf → إستنّيت
-- **Past, ★ هيّا & همّا:** stem + suf → إستنّت، إستنّو
+- **Past, ★ هيّا & همّا:** stem + suf → إستنّت، إستنّو (نسي and صحي keep a y sound: نسيت nisyat, نسيو nisyu)
 - **Present / future, most people:** pre + stem ending in ى → بستنّى
 - **Present / future, ★ إنتي، إنتو & همّا:** pre + stem + suf → بتستنّي، بتستنّو، بيستنّو
 - **Imperative:** ending in ى for a man, ي for a woman, و for a group → إستنّى / إستنّي / إستنّو
@@ -851,7 +853,8 @@ ${table(ISTANNA)}
 ${table(ITMANNA)}
 
 - **أُمنية / أُمنيات / أماني** (umniye, umniyāt, amāni): a wish / wishes
-- **إتمنّى + noun or pronoun:** to wish for something. **بتمنّالك التوفيق** (batmannālak it-tawfīʔ), I wish you success.
+- **إتمنّى + noun:** to wish for something. **بتمنّى السلام** (batmanna is-salām), I wish for peace.
+- **إتمنّى + لـ + person:** to wish someone something. **بتمنّالك التوفيق** (batmannālak it-tawfīʔ), I wish you success.
 
 ## إتغدّى — to have lunch
 
@@ -1051,7 +1054,7 @@ ${PRONUNCIATION_KEY}`,
 
 | Verb | إنتا | إنتي | إنتو |
 |---|---|---|---|
-| درس (to study) | **إدرس** idris | **إدرسي** idrisi | **إدرسو** idrisu |
+| درس (to study) | **إدرُس** idrus | **إدرُسي** idrusi | **إدرُسو** idrusu |
 | فتح (to open) | **إفتح** iftaḥ | **إفتحي** iftaḥi | **إفتحو** iftaḥu |
 
 **2. 4 letters → the verb stays as it is**
@@ -1096,7 +1099,7 @@ ${PRONUNCIATION_KEY}`,
 | حكى (to speak) | **إحكي** iḥki | **إحكي** iḥki | **إحكو** iḥku |
 | مشى (to walk) | **إمشي** imshi | **إمشي** imshi | **إمشو** imshu |
 | سوّى (to do) | **سوّي** sawwi | **سوّي** sawwi | **سوّو** sawwu |
-| قضّى (to spend time) | **قضّي** ʔaḍḍi | **قضّي** ʔaḍḍi | **قضّو** ʔaḍḍu |
+| فضّى (to empty) | **فضّي** faḍḍi | **فضّي** faḍḍi | **فضّو** faḍḍu |
 
 ### Ⓕ Special case 5: ي in the middle (S.C.5 verbs)
 
