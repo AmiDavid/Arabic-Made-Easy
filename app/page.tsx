@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { GuestBanner } from '@/components/guest-banner';
+import { DailyCard } from '@/components/daily-card';
 import { BookOpen, Layers, Grid3x3, Camera, Mic, BookMarked, Image as ImageIcon, HelpCircle, PenLine, Languages, History, ShieldCheck } from 'lucide-react';
 
 // these use AI credits
@@ -45,6 +46,7 @@ export default function Home() {
       {/* TILES */}
       <div className="max-w-5xl mx-auto px-4 pt-6 pb-4">
         <GuestBanner />
+        <DailyCard />
         <div className="grid grid-cols-2 gap-3">
           {TILES.map(({ href, title, ar, desc, icon: Icon, accent }) => (
             <Link

@@ -1,32 +1,55 @@
 'use client';
-import { parseForms } from '@/lib/forms';
 import { WordWithForms } from '@/components/word-forms';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Entry, Topic } from '@/types';
 import { cn } from '@/lib/utils';
-import { Check, X, Zap, Loader2 } from 'lucide-react';
+import { Check, X, Zap, Loader2, RotateCcw } from 'lucide-react';
+import { Deck, answerText, buildOptions, cleanEnglish, fetchPool, recordResult, type Direction } from '@/lib/practice';
 
 /**
- * Multiple-choice quiz: see an Arabic word, pick the correct English translation
- * from 4 options. Score tracked for the session.
+ * Multiple-choice quiz. Every word in the topic comes up once before anything
+ * repeats; a word you miss comes back a few questions later; across sessions
+ * the words you've seen least or got wrong come first.
  */
 
-type Question = {
-  entry: Entry;
-  options: string[];
-  correct: string;
-};
+type Question = { entry: Entry; options: string[]; correct: string };
 
 export default function QuizPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [topicId, setTopicId] = useState<string | 'all'>('all');
-  const [direction, setDirection] = useState<'ar-to-en' | 'en-to-ar'>('ar-to-en');
+  const [direction, setDirection] = useState<Direction>('ar-to-en');
   const [pool, setPool] = useState<Entry[]>([]);
   const [q, setQ] = useState<Question | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
-  const [stats, setStats] = useState({ right: 0, wrong: 0, streak: 0, bestStreak: 0 });
+  const [stats, setStats] = useState({ right: 0, wrong: 0, streak: 0 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [roundDone, setRoundDone] = useState(false);
+
+  const deck = useRef<Deck | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dirRef = useRef(direction);
+  dirRef.current = direction;
+
+  const clearTimer = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+
+  const deal = useCallback((p: Entry[], dir: Direction) => {
+    clearTimer();
+    setPicked(null);
+    const d = deck.current;
+    if (!d || p.length < 4) return setQ(null);
+    const entry = d.next();
+    if (!entry) {
+      setRoundDone(true);
+      return setQ(null);
+    }
+    setRoundDone(false);
+    setQ({ entry, options: buildOptions(entry, p, dir), correct: answerText(entry, dir) });
+  }, []);
 
   useEffect(() => {
     supabase.from('topics').select('*').order('sort_order').then(({ data }) => {
@@ -35,66 +58,65 @@ export default function QuizPage() {
       // Support /quiz?topic=<slug> (e.g. from the weekly recap)
       const slug = new URLSearchParams(window.location.search).get('topic');
       const match = slug && list.find((t) => t.slug === slug);
-      if (match) {
-        setQ(null);
-        setTopicId(match.id);
-      }
+      if (match) setTopicId(match.id);
     });
+    return clearTimer;
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
+      clearTimer();
       setLoading(true);
-      let query = supabase.from('entries').select('*').limit(300);
-      if (topicId !== 'all') query = query.eq('topic_id', topicId);
-      const { data } = await query;
-      // Filter: no uncertain, no super long, has both ar/en
-      const clean = ((data as Entry[]) || []).filter(
-        (e) => !e.uncertain && e.arabic?.length < 25 && e.english && e.english.length < 40
-      );
-      setPool(clean);
-      setLoading(false);
+      setError(null);
+      setQ(null);
+      try {
+        const p = await fetchPool(topicId === 'all' ? null : topicId);
+        if (cancelled) return;
+        deck.current = new Deck(p);
+        setPool(p);
+        deal(p, dirRef.current);
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || 'Could not load words');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
-  }, [topicId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [topicId, deal]);
 
-  useEffect(() => {
-    if (pool.length >= 4 && !q) nextQ();
-  }, [pool]);
-
-  function nextQ() {
-    if (pool.length < 4) return;
-    const correctEntry = pool[Math.floor(Math.random() * pool.length)];
-    const otherPool = pool.filter((e) => e.id !== correctEntry.id);
-    const distractors = otherPool.sort(() => Math.random() - 0.5).slice(0, 3);
-    const options = [correctEntry, ...distractors]
-      .map((e) => direction === 'ar-to-en' ? e.english.replace('[?]', '').trim() : parseForms(e.arabic, e.english).main)
-      .sort(() => Math.random() - 0.5);
-    setQ({
-      entry: correctEntry,
-      options,
-      correct: direction === 'ar-to-en' ? correctEntry.english.replace('[?]', '').trim() : parseForms(correctEntry.arabic, correctEntry.english).main,
-    });
+  function flipDirection() {
+    const dir: Direction = direction === 'ar-to-en' ? 'en-to-ar' : 'ar-to-en';
+    setDirection(dir);
+    clearTimer();
     setPicked(null);
+    // keep the same word, just ask it the other way round
+    if (q) setQ({ entry: q.entry, options: buildOptions(q.entry, pool, dir), correct: answerText(q.entry, dir) });
+    else deal(pool, dir);
   }
 
   function pick(opt: string) {
-    if (picked) return;
+    if (picked || !q) return;
     setPicked(opt);
-    const correct = opt === q!.correct;
-    setStats((s) => {
-      const streak = correct ? s.streak + 1 : 0;
-      return {
-        right: s.right + (correct ? 1 : 0),
-        wrong: s.wrong + (correct ? 0 : 1),
-        streak,
-        bestStreak: Math.max(s.bestStreak, streak),
-      };
-    });
-    // auto-advance after a beat
-    setTimeout(() => nextQ(), correct ? 700 : 1500);
+    const correct = opt === q.correct;
+    recordResult(q.entry.id, correct);
+    if (!correct) deck.current?.requeue(q.entry);
+    setStats((s) => ({
+      right: s.right + (correct ? 1 : 0),
+      wrong: s.wrong + (correct ? 0 : 1),
+      streak: correct ? s.streak + 1 : 0,
+    }));
+    timer.current = setTimeout(() => deal(pool, dirRef.current), correct ? 700 : 1600);
   }
 
-  const prompt = q && (direction === 'ar-to-en' ? q.entry.arabic : q.entry.english.replace('[?]', '').trim());
+  function restart() {
+    deck.current?.refill(pool);
+    deal(pool, direction);
+  }
+
+  const d = deck.current;
 
   return (
     <div className="max-w-md mx-auto px-4 pt-6">
@@ -111,33 +133,44 @@ export default function QuizPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
-        <select value={topicId} onChange={(e) => { setQ(null); setTopicId(e.target.value); }} className="flex-1 bg-white/5 border hairline rounded-xl px-3 py-2 text-sm">
+      <div className="flex gap-2 mb-2">
+        <select value={topicId} onChange={(e) => setTopicId(e.target.value)} className="flex-1 bg-white/5 border hairline rounded-xl px-3 py-2 text-sm">
           <option value="all">All topics</option>
           {topics.map((t) => <option key={t.id} value={t.id}>{t.name_en}</option>)}
         </select>
-        <button onClick={() => { setDirection(direction === 'ar-to-en' ? 'en-to-ar' : 'ar-to-en'); setQ(null); }} className="bg-white/5 border hairline rounded-xl px-3 py-2 text-sm">
+        <button onClick={flipDirection} className="bg-white/5 border hairline rounded-xl px-3 py-2 text-sm">
           {direction === 'ar-to-en' ? 'AR → EN' : 'EN → AR'}
         </button>
       </div>
+      {d && pool.length >= 4 && !loading && (
+        <div className="text-[10px] text-stone-200/50 mb-3 text-right">
+          {Math.min(d.dealt, d.size)} / {d.size} words this round
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center text-stone-200/60 py-20 flex items-center justify-center gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </div>
+      ) : error ? (
+        <div className="text-center text-rose-300 py-20 text-sm">{error}</div>
       ) : pool.length < 4 ? (
-        <div className="text-center text-stone-200/60 py-20">
-          Not enough entries in this topic. Pick another.
+        <div className="text-center text-stone-200/60 py-20">Not enough words in this topic yet. Pick another.</div>
+      ) : roundDone || !q ? (
+        <div className="text-center py-16 pop">
+          <div className="text-xl font-semibold text-gold-500">You went through every word here 🎉</div>
+          <div className="text-sm text-stone-200/60 mt-1">✓ {stats.right} · ✗ {stats.wrong}</div>
+          <button onClick={restart} className="mt-5 bg-gold-500 text-night-900 rounded-xl px-4 py-2 text-sm font-semibold inline-flex items-center gap-1">
+            <RotateCcw className="w-4 h-4" /> Go again
+          </button>
         </div>
-      ) : !q ? (
-        <div className="text-center text-stone-200/60 py-20">Loading question…</div>
       ) : (
         <>
           <div className="min-h-[120px] rounded-3xl border hairline bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-6 flex items-center justify-center text-center pop">
             {direction === 'ar-to-en' ? (
               <WordWithForms arabic={q.entry.arabic} english={q.entry.english} size="xl" align="center" />
             ) : (
-              <div className="text-3xl font-semibold">{prompt}</div>
+              <div className="text-3xl font-semibold">{cleanEnglish(q.entry)}</div>
             )}
           </div>
 
@@ -167,9 +200,7 @@ export default function QuizPage() {
             })}
           </div>
 
-          <div className="text-center text-xs text-stone-200/50 mt-4">
-            {q.entry.page_label || ''}
-          </div>
+          <div className="text-center text-xs text-stone-200/50 mt-4">{q.entry.page_label || ''}</div>
         </>
       )}
     </div>

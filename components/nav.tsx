@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Layers, Grid3x3, Camera, Mic, BookMarked, Home, HelpCircle, PenLine, Languages } from 'lucide-react';
+import { BookOpen, Layers, Grid3x3, Mic, BookMarked, Home, HelpCircle, Sun, PenLine, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
   { href: '/', label: 'Home', icon: Home },
+  { href: '/daily', label: 'Daily', icon: Sun },
   { href: '/catalog', label: 'Words', icon: BookOpen },
   { href: '/grammar', label: 'Grammar', icon: BookMarked },
   { href: '/flashcards', label: 'Cards', icon: Layers },
@@ -13,7 +14,6 @@ const TABS = [
   { href: '/match', label: 'Match', icon: Grid3x3 },
   { href: '/write', label: 'Write', icon: PenLine },
   { href: '/sentences', label: 'Translate', icon: Languages },
-  { href: '/scan', label: 'Scan', icon: Camera },
   { href: '/voice', label: 'Voice', icon: Mic },
 ];
 
