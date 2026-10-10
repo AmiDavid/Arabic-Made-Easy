@@ -61,7 +61,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (!row) return setState({ kind: 'not-invited', email });
       const account: Account = { id: session.user.id, email, role: row.role as Role, name: row.display_name ?? null };
       try {
+        // guest mode now follows the account, not an old ?guest= link remembered by this browser
         if (account.role === 'viewer') localStorage.setItem('guest-name', account.name || email.split('@')[0]);
+        else localStorage.removeItem('guest-name');
       } catch {}
       setState({ kind: 'ok', account });
     }

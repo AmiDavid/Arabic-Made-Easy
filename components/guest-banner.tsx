@@ -1,13 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Sparkles } from 'lucide-react';
-import { readGuestFromUrl, guestName } from '@/lib/guest';
+import { guestName } from '@/lib/guest';
 
 /** Welcome note for a guest (?guest=Name), explaining which parts use AI credits. */
 export function GuestBanner() {
   const [name, setName] = useState<string | null>(null);
   useEffect(() => {
-    readGuestFromUrl();
+    // set by the sign-in for viewer accounts (e.g. Basil); old ?guest= links no longer apply
     setName(guestName());
   }, []);
   if (!name) return null;

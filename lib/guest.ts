@@ -1,9 +1,9 @@
 /**
  * Guest mode for people you share the app with (e.g. your teacher).
- * Open the app once with ?guest=Name and this phone remembers it:
+ * Turned on by the sign-in for viewer accounts (components/auth-gate.tsx):
  *  - their voice chats are not saved into your history or weekly recap
  *  - the AI teacher doesn't use your past chats as "memory" with them
- * ?guest=off turns it off again.
+ * readGuestFromUrl (the old ?guest=Name link) is no longer called.
  */
 const KEY = 'guest-name';
 
