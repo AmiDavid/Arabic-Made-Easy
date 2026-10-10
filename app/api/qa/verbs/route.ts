@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { conjugate } from '@/lib/conjugate';
 import { VERB_CASES } from '@/lib/verbs';
@@ -10,6 +11,8 @@ export const dynamic = 'force-dynamic';
  * how it's classified and its key forms, as plain text (one verb per line).
  */
 export async function GET(req: NextRequest) {
+  const user = await requireUser(req);
+  if (user instanceof NextResponse) return user;
   const q = (req.nextUrl.searchParams.get('q') || '').toLowerCase();
   const from = Number(req.nextUrl.searchParams.get('from') || 0);
   const n = Number(req.nextUrl.searchParams.get('n') || 150);

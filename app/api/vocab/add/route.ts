@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { stripDiacritics } from '@/lib/utils';
 
@@ -17,6 +18,8 @@ import { stripDiacritics } from '@/lib/utils';
 const TOPIC_SLUG = 'from-practice';
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req, 'editor');
+  if (user instanceof NextResponse) return user;
   try {
     const { items, source, entryType } = await req.json();
     if (!Array.isArray(items) || !items.length) {

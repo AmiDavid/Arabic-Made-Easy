@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 
 export const maxDuration = 60;
 
@@ -44,6 +45,8 @@ async function openaiTts(text: string): Promise<ArrayBuffer> {
 }
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req);
+  if (user instanceof NextResponse) return user;
   const { text } = await req.json().catch(() => ({}));
   if (!text) return NextResponse.json({ error: 'text required' }, { status: 400 });
 

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { GRAMMAR } from '@/lib/grammar-content';
 
@@ -8,7 +9,9 @@ import { GRAMMAR } from '@/lib/grammar-content';
  * Used after updating lib/grammar-content.ts so the DB reflects the new rules.
  */
 
-export async function POST() {
+export async function POST(req: Request) {
+  const user = await requireUser(req, 'owner');
+  if (user instanceof NextResponse) return user;
   try {
     const admin = supabaseAdmin();
     let count = 0;

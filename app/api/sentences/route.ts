@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { generateSentences, SentenceError } from '@/lib/sentences';
 
 export const maxDuration = 60;
@@ -10,6 +11,8 @@ export const maxDuration = 60;
  * each with a reference Palestinian Arabic translation.
  */
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req);
+  if (user instanceof NextResponse) return user;
   try {
     const body = await req.json();
     const { sentences } = await generateSentences(body);

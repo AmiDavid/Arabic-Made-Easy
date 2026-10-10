@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { stripDiacritics } from '@/lib/utils';
 
@@ -10,7 +11,9 @@ import { stripDiacritics } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = await requireUser(req);
+  if (user instanceof NextResponse) return user;
   try {
     const admin = supabaseAdmin();
     const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
@@ -18,6 +21,7 @@ export async function GET() {
     const { data: convos } = await admin
       .from('conversations')
       .select('messages, updated_at')
+      .eq('user_id', user.id)
       .gte('updated_at', since)
       .order('updated_at', { ascending: false });
 

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Nav from '@/components/nav';
+import { AuthGate } from '@/components/auth-gate';
 
 export const metadata: Metadata = {
   title: 'Arabic Made Easy',
@@ -66,7 +67,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
 
         <div className="min-h-dvh flex flex-col relative">
-          <main className="flex-1 pb-28">{children}</main>
+          <main className="flex-1 pb-28">
+            <AuthGate>{children}</AuthGate>
+          </main>
           <Credits />
           <Nav />
         </div>

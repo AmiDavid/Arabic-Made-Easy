@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 /**
@@ -7,10 +8,12 @@ import { supabaseAdmin } from '@/lib/supabase';
  * - If id provided, updates the existing row (upsert)
  * - If no id, creates a new row and returns its id
  *
- * GET /api/conversations — list all past conversations (newest first)
+ * GET /api/conversations — list the signed-in user's past conversations (newest first)
  */
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req);
+  if (user instanceof NextResponse) return user;
   try {
     const { id, messages } = await req.json();
     if (!messages || !Array.isArray(messages)) {
@@ -25,14 +28,15 @@ export async function POST(req: NextRequest) {
       const { error } = await admin
         .from('conversations')
         .update({ messages, updated_at: now })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
       if (error) throw error;
       return NextResponse.json({ id });
     } else {
       // Create new
       const { data, error } = await admin
         .from('conversations')
-        .insert({ messages, user_id: 'me', created_at: now, updated_at: now })
+        .insert({ messages, user_id: user.id, created_at: now, updated_at: now })
         .select('id')
         .single();
       if (error) throw error;
@@ -44,12 +48,15 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = await requireUser(req);
+  if (user instanceof NextResponse) return user;
   try {
     const admin = supabaseAdmin();
     const { data, error } = await admin
       .from('conversations')
       .select('id, messages, created_at, updated_at')
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
       .limit(50);
     if (error) throw error;

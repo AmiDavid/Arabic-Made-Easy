@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, currentUserId } from '@/lib/supabase';
 import type { Entry, Topic } from '@/types';
 import { RotateCcw, Check, X, Zap } from 'lucide-react';
 import { grade, initialReview, type ReviewState } from '@/lib/srs';
@@ -57,14 +57,16 @@ export default function FlashcardsPage() {
   async function answer(quality: 0 | 1 | 2 | 3) {
     if (!card) return;
     // Fetch existing review state (or init)
-    const { data } = await supabase.from('reviews').select('*').eq('entry_id', card.id).eq('user_id', 'me').single();
+    const uid = await currentUserId();
+    if (!uid) return;
+    const { data } = await supabase.from('reviews').select('*').eq('entry_id', card.id).eq('user_id', uid).maybeSingle();
     const current: ReviewState = data ? {
       ease: data.ease, interval_days: data.interval_days, repetitions: data.repetitions, due_at: new Date(data.due_at),
     } : initialReview();
     const next = grade(current, quality);
     await supabase.from('reviews').upsert({
       entry_id: card.id,
-      user_id: 'me',
+      user_id: uid,
       ease: next.ease,
       interval_days: next.interval_days,
       repetitions: next.repetitions,

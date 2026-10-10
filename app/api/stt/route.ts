@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { transcribe } from '@/lib/stt';
 
 export const maxDuration = 60;
 
 /** POST /api/stt — multipart/form-data with an "audio" field → { text } */
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req);
+  if (user instanceof NextResponse) return user;
   try {
     const form = await req.formData();
     const audio = form.get('audio') as File | null;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 
 /**
  * POST /api/voice-clone
@@ -12,6 +13,8 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req, 'owner');
+  if (user instanceof NextResponse) return user;
   try {
     const form = await req.formData();
     const name = form.get('name') as string;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { generateJSON } from '@/lib/ai';
 
 export const maxDuration = 60;
@@ -33,6 +34,8 @@ const SCHEMA = {
 };
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req);
+  if (user instanceof NextResponse) return user;
   try {
     const body = await req.json();
     if (!body?.verb || !Array.isArray(body.past)) {

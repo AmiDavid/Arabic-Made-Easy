@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { generateJSON, type ChatTurn } from '@/lib/ai';
 import { supabaseAdmin } from '@/lib/supabase';
 
@@ -67,7 +68,7 @@ const SCHEMA = {
 
 export const maxDuration = 60;
 
-async function buildContext(conversationId?: string, topicId?: string, topicName?: string, guest = false) {
+async function buildContext(userId: string, conversationId?: string, topicId?: string, topicName?: string, guest = false) {
   const admin = supabaseAdmin();
   const parts: string[] = [];
 
@@ -76,6 +77,7 @@ async function buildContext(conversationId?: string, topicId?: string, topicName
     let q = admin
       .from('conversations')
       .select('id, messages, updated_at')
+      .eq('user_id', userId)
       .order('updated_at', { ascending: false })
       .limit(4);
     const { data } = await q;
@@ -130,13 +132,15 @@ async function buildContext(conversationId?: string, topicId?: string, topicName
 }
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req);
+  if (user instanceof NextResponse) return user;
   try {
     const { messages, conversationId, topicId, topicName, guest } = await req.json();
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'messages array required' }, { status: 400 });
     }
 
-    const context = await buildContext(conversationId, topicId, topicName, !!guest);
+    const context = await buildContext(user.id, conversationId, topicId, topicName, !!guest || user.role === 'viewer');
     const system = context ? `${BASE_SYSTEM}\n\n${context}` : BASE_SYSTEM;
 
     const turns: ChatTurn[] = messages.map((m: any) => ({

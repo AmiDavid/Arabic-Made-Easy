@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { GuestBanner } from '@/components/guest-banner';
+import { AccountLine } from '@/components/auth-gate';
 import { DailyCard } from '@/components/daily-card';
 import { BookOpen, Layers, Grid3x3, Camera, Mic, BookMarked, Image as ImageIcon, HelpCircle, PenLine, Languages, History, ShieldCheck } from 'lucide-react';
 
@@ -91,6 +92,7 @@ export default function Home() {
           <div className="text-[10px] text-stone-200/40 mt-2">
             App built by Amichai with Claude.
           </div>
+          <AccountLine />
         </div>
       </div>
     </div>

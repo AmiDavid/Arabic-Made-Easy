@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { stripDiacritics } from '@/lib/utils';
 import { BATCH as POLITICS_2026_10_07 } from '@/lib/batches/politics-2026-10-07';
@@ -18,7 +19,9 @@ const isVerb = (en: string) => /^\s*to\s/i.test(en);
 const keyOf = (ar: string, en: string) =>
   stripDiacritics(ar.split('،')[0]).replace(/ّ/g, '').trim() + (isVerb(en) ? '|v' : '|n');
 
-export async function GET(_req: NextRequest, ctx: { params: Promise<{ batch: string }> }) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ batch: string }> }) {
+  const user = await requireUser(req, 'owner');
+  if (user instanceof NextResponse) return user;
   const { batch } = await ctx.params;
   const b = BATCHES[batch];
   if (!b) return NextResponse.json({ error: 'unknown batch' }, { status: 404 });

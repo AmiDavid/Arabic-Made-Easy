@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth-server';
 import Anthropic from '@anthropic-ai/sdk';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ANTHROPIC_MODELS, generateJSON, skippedModels } from '@/lib/ai';
@@ -28,6 +29,8 @@ async function timed<T>(fn: () => Promise<T>) {
 }
 
 export async function GET(req: NextRequest) {
+  const user = await requireUser(req, 'owner');
+  if (user instanceof NextResponse) return user;
   const deep = req.nextUrl.searchParams.get('deep') === '1';
   const only = req.nextUrl.searchParams.get('only');
   const out: Record<string, any> = {};

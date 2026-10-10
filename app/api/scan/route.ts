@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireUser } from "@/lib/auth-server";
 export const maxDuration = 60;
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
@@ -55,6 +56,8 @@ Respond with ONLY valid JSON:
 }`;
 
 export async function POST(req: NextRequest) {
+  const user = await requireUser(req, 'editor');
+  if (user instanceof NextResponse) return user;
   try {
     const { imageBase64 } = await req.json();
     if (!imageBase64)
